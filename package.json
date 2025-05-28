@@ -1,0 +1,14 @@
+{
+  "name": "bess-calculator",
+  "version": "1.0.0",
+  "description": "BESS Capacity Calculator",
+  "scripts": {
+    "test": "echo 'No tests specified'"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  }
+} 
