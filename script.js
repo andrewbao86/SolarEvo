@@ -42,58 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Store devices
     let devices = [];
 
-    // Add example devices on load (as shown in the image)
-    addExampleDevices();
-
     // Add device event listener
     addDeviceButton.addEventListener('click', addDevice);
-
-    // Function to add example devices
-    function addExampleDevices() {
-        // Add fridge example
-        devices.push({
-            id: generateId(),
-            name: 'Fridge',
-            power: 250,
-            quantity: 1,
-            operatingHours: 24,
-            batteryHours: 12
-        });
-
-        // Add lamp example
-        devices.push({
-            id: generateId(),
-            name: 'Lamp',
-            power: 40,
-            quantity: 10,
-            operatingHours: 12,
-            batteryHours: 10
-        });
-
-        // Add TV example
-        devices.push({
-            id: generateId(),
-            name: 'TV',
-            power: 120,
-            quantity: 1,
-            operatingHours: 6,
-            batteryHours: 4
-        });
-
-        // Add laptop example
-        devices.push({
-            id: generateId(),
-            name: 'Laptop',
-            power: 65,
-            quantity: 2,
-            operatingHours: 8,
-            batteryHours: 6
-        });
-
-        // Render devices and update calculations
-        renderDevices();
-        updateCalculations();
-    }
 
     // Function to add a new device
     function addDevice() {
@@ -520,6 +470,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Save the PDF
             doc.save('bess-calculator-report.pdf');
+
+            // Store calculation data in localStorage for the form
+            const calculationData = {
+                totalEnergy: totalEnergyElement.textContent,
+                batteryCapacity: batteryCapacityElement.textContent,
+                recommendedSize: recommendedSizeElement.textContent,
+                solarevoRecommendation: solarevoRecommendationElement.textContent,
+                devices: devices
+            };
+            localStorage.setItem('calculationData', JSON.stringify(calculationData));
+
+            // Redirect to thank you page after a brief delay
+            setTimeout(() => {
+                window.location.href = './thank-you.html';
+            }, 500);
+
+            // Set up automatic redirect from thank you page to user info form
+            localStorage.setItem('redirectTime', Date.now());
 
         } catch (error) {
             console.error('Error generating PDF:', error);
