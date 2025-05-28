@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "description": "BESS Capacity Calculator",
   "scripts": {
-    "test": "echo 'No tests specified'"
+    "test": "echo 'No tests specified'",
+    "start": "serve .",
+    "build": "echo 'Static site - no build required'",
+    "lint": "eslint ."
   },
   "engines": {
     "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "serve": "^14.0.0"
   },
   "devDependencies": {
     "eslint": "^8.56.0"

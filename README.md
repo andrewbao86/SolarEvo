@@ -1,8 +1,59 @@
 # BESS Calculator
 
-A simple and efficient Battery Energy Storage System (BESS) calculator that helps users determine their energy storage needs.
+A Battery Energy Storage System (BESS) capacity calculator web application.
 
-![BESS Calculator Screenshot](screenshots/calculator.png)
+## Setup
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Start the development server:
+```bash
+npm start
+```
+
+## Deployment
+
+This project is configured for deployment on AWS Amplify. The deployment process includes:
+
+1. Automatic deployment on push to the main branch
+2. Static site hosting
+3. No build step required (static HTML/CSS/JS)
+
+### Manual Deployment
+
+To deploy manually:
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Run linting:
+```bash
+npm run lint
+```
+
+3. The site is static, so no build step is required. The root directory contains all necessary files.
+
+## Project Structure
+
+- `index.html` - Main entry point
+- `script.js` - Application logic
+- `styles.css` - Styling
+- `thank-you.html` - Thank you page
+- `bao-service-logo.svg` - Logo asset
+
+## Requirements
+
+- Node.js >= 14.0.0
+- npm >= 6.0.0
+
+## License
+
+See [LICENSE](LICENSE) file for details.
 
 ## Features
 - Calculate total daily energy consumption
@@ -66,9 +117,6 @@ bess-calculator/
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 - Icons and design inspiration from various open-source projects
