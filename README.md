@@ -19,8 +19,8 @@ npm start
 This project is configured for deployment on AWS Amplify. The deployment process includes:
 
 1. Automatic deployment on push to the main branch
-2. Static site hosting
-3. No build step required (static HTML/CSS/JS)
+2. Static site hosting with build process
+3. Files are copied to a `dist` directory during build
 
 ### Manual Deployment
 
@@ -36,10 +36,16 @@ npm install
 npm run lint
 ```
 
-3. The site is static, so no build step is required. The root directory contains all necessary files.
+3. Build the project:
+```bash
+npm run build
+```
+
+4. The built files will be in the `dist` directory
 
 ## Project Structure
 
+- `dist/` - Build output directory
 - `index.html` - Main entry point
 - `script.js` - Application logic
 - `styles.css` - Styling

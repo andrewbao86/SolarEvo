@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo 'No tests specified'",
     "start": "serve .",
-    "build": "echo 'Static site - no build required'",
+    "prebuild": "mkdir -p dist",
+    "build": "cp *.html *.js *.css *.svg dist/ || true",
     "lint": "eslint ."
   },
   "engines": {
