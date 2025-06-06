@@ -1,24 +1,26 @@
 # Dependencies
 node_modules/
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Editor directories and files
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Build output
+dist/
+build/
+out/
+
+# IDE and editor files
 .idea/
 .vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.swp
+*.swo
+*~
 
 # OS generated files
 .DS_Store
@@ -27,4 +29,42 @@ yarn-error.log*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+
+# Amplify
+amplify/
+.amplify/
+
+#amplify-do-not-edit-begin
+amplify/\#current-cloud-backend
+amplify/.config/local-*
+amplify/logs
+amplify/mock-data
+amplify/mock-api-resources
+amplify/backend/amplify-meta.json
+amplify/backend/.temp
+build/
+dist/
+node_modules/
+aws-exports.js
+awsconfiguration.json
+amplifyconfiguration.json
+amplifyconfiguration.dart
+amplify-build-config.json
+amplify-gradle-config.json
+amplifytools.xcconfig
+.secret-*
+**.sample
+
+
+
+
+.aws/
+
+
+#amplify-do-not-edit-end
+
+# Exclude unnecessary files from the GitHub repository
+*.log
+amplify/team-provider-info.json
+amplify/backend/awscloudformation/
