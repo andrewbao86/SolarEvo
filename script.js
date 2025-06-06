@@ -2112,31 +2112,32 @@ document.addEventListener('DOMContentLoaded', () => {
             generateShareLinkBtn.disabled = true;
             generateShareLinkBtn.textContent = 'Generating...';
     
+            // ✅ FIXED: Proper data type conversions for DynamoDB schema
             const input = {
-                creatorName: name,
-                creatorEmail: email,
-                creatorMobile: mobile,
+                creatorName: String(name || ""),
+                creatorEmail: String(email || ""),
+                creatorMobile: String(mobile || ""),
                 devices: devices.map(device => ({
-                    name: device.name,
-                    power: device.power,
-                    quantity: device.quantity,
-                    operatingHours: device.operatingHours,
-                    batteryHours: device.batteryHours,
-                    operatingRanges: device.operatingRanges.map(range => ({
-                        start: range[0],
-                        end: range[1]
+                    name: String(device.name || ""),
+                    power: parseInt(device.power) || 0,           // ✅ Convert to Int
+                    quantity: parseInt(device.quantity) || 1,     // ✅ Convert to Int  
+                    operatingHours: parseFloat(device.operatingHours) || 0.0,  // ✅ Convert to Float
+                    batteryHours: parseFloat(device.batteryHours) || 0.0,      // ✅ Convert to Float
+                    operatingRanges: (device.operatingRanges || []).map(range => ({
+                        start: parseInt(range[0]) || 0,           // ✅ Convert to Int
+                        end: parseInt(range[1]) || 0              // ✅ Convert to Int
                     })),
-                    batteryRanges: device.batteryRanges.map(range => ({
-                        start: range[0],
-                        end: range[1]
+                    batteryRanges: (device.batteryRanges || []).map(range => ({
+                        start: parseInt(range[0]) || 0,           // ✅ Convert to Int
+                        end: parseInt(range[1]) || 0              // ✅ Convert to Int
                     })),
-                    critical: device.critical
+                    critical: Boolean(device.critical)            // ✅ Convert to Boolean
                 })),
                 calculations: {
-                    totalEnergy: totalEnergyElement.textContent,
-                    batteryCapacity: batteryCapacityElement.textContent,
-                    recommendedSize: recommendedSizeElement.textContent,
-                    solarevoRecommendation: solarevoRecommendationElement.textContent
+                    totalEnergy: String(totalEnergyElement?.textContent || "0 kWh"),
+                    batteryCapacity: String(batteryCapacityElement?.textContent || "0 kWh"),
+                    recommendedSize: String(recommendedSizeElement?.textContent || "0 kWh"),
+                    solarevoRecommendation: String(solarevoRecommendationElement?.textContent || "-")
                 }
             };
     
@@ -2158,6 +2159,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             } catch (dbError) {
                 console.error('❌ Database save failed:', dbError);
+                console.error('🔍 Detailed GraphQL errors:');
+                if (dbError.errors) {
+                    dbError.errors.forEach((error, index) => {
+                        console.error(`Error ${index + 1}:`, error.message);
+                        console.error('Path:', error.path);
+                        console.error('Extensions:', error.extensions);
+                    });
+                }
+                console.error('🔍 Input data that caused failure:', JSON.stringify(input, null, 2));
                 throw dbError;
             }
         } else {
