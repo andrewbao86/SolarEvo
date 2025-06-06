@@ -2149,7 +2149,14 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const result = await client.graphql({
                     query: createSharedCalculationMutation,
-                    variables: { input }
+                    variables: {
+                        creatorName: input.creatorName,
+                        creatorEmail: input.creatorEmail,
+                        creatorMobile: input.creatorMobile,
+                        devices: JSON.stringify(input.devices),
+                        calculations: JSON.stringify(input.calculations),
+                        expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+                    }
                 });
         
                 console.log('✅ Successfully saved to database:', result);
