@@ -11,17 +11,30 @@ let client = null;
 let isAmplifyConfigured = false;
 
 try {
+    // Debug: Log the AWS configuration
+    console.log('🔍 AWS Configuration Debug:', {
+        region: awsExports.aws_project_region,
+        graphqlEndpoint: awsExports.aws_appsync_graphqlEndpoint ? 'SET' : 'MISSING',
+        apiKey: awsExports.aws_appsync_apiKey ? 'SET' : 'MISSING'
+    });
+
     // Only configure if we have a valid GraphQL endpoint
     if (awsExports.aws_appsync_graphqlEndpoint && awsExports.aws_appsync_graphqlEndpoint.trim() !== '') {
         Amplify.configure(awsExports);
         client = generateClient();
         isAmplifyConfigured = true;
         console.log('✅ AWS Amplify configured successfully');
+        console.log('🔗 GraphQL Endpoint:', awsExports.aws_appsync_graphqlEndpoint);
     } else {
         console.warn('⚠️ AWS Amplify not configured - using fallback mode (URL encoding)');
+        console.warn('🔍 Missing GraphQL endpoint. Check environment variables:');
+        console.warn('- VITE_AWS_GRAPHQL_URL');
+        console.warn('- VITE_AWS_API_KEY');
+        console.warn('- VITE_AWS_REGION');
     }
 } catch (error) {
     console.warn('⚠️ AWS Amplify configuration failed - using fallback mode:', error.message);
+    console.error('🔍 Full error:', error);
 }
 
 
@@ -2127,21 +2140,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
     
-            // Try backend only if configured
-            if (isAmplifyConfigured && client) {
+                    // Try backend only if configured
+        if (isAmplifyConfigured && client) {
+            console.log('🚀 Attempting to save to database...');
+            console.log('📝 Data to save:', input);
+            
+            try {
                 const result = await client.graphql({
                     query: createSharedCalculationMutation,
                     variables: { input }
                 });
         
+                console.log('✅ Successfully saved to database:', result);
                 const calculationId = result.data.createSharedCalculation.id;
                 const shareUrl = `${window.location.origin}${window.location.pathname}?share=${calculationId}`;
                 showShareModal(shareUrl, name);
                 return;
-            } else {
-                // No backend configured, skip to fallback
-                throw new Error('Backend not configured');
+            } catch (dbError) {
+                console.error('❌ Database save failed:', dbError);
+                throw dbError;
             }
+        } else {
+            console.warn('⚠️ Backend not configured, using fallback mode');
+            console.warn('🔍 isAmplifyConfigured:', isAmplifyConfigured);
+            console.warn('🔍 client:', client);
+            // No backend configured, skip to fallback
+            throw new Error('Backend not configured');
+        }
     
         } catch (error) {
             console.error('Error generating shareable link:', error);
