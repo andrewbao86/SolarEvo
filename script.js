@@ -2023,15 +2023,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    // Mobile validation function (Malaysia format)
+    // Mobile validation function (International format)
     function validateMobile() {
         const mobile = prospectMobileInput.value.trim();
-        const mobileRegex = /^(\+?6?0?1[0-9]{8,9})$/;
         
         clearFieldError(prospectMobileInput);
         
-        if (mobile && !mobileRegex.test(mobile)) {
-            showFieldError(prospectMobileInput, 'Please enter a valid Malaysian mobile number (+60123456789)');
+        if (!mobile) {
+            showFieldError(prospectMobileInput, 'Mobile number is required');
+            return false;
+        }
+        
+        // Remove spaces, dashes, and parentheses for validation
+        const cleanMobile = mobile.replace(/[\s\-\(\)]/g, '');
+        
+        // International format: must start with + and be 8-15 digits total
+        const internationalRegex = /^\+[1-9]\d{6,14}$/;
+        
+        if (!internationalRegex.test(cleanMobile)) {
+            showFieldError(prospectMobileInput, 'Please enter a valid international mobile number (e.g., +60123456789, +1234567890, +442071234567)');
             return false;
         }
         

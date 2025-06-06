@@ -1,175 +1,117 @@
-# BESS Calculator
+# SolarEvo BESS Calculator
 
-A Battery Energy Storage System (BESS) capacity calculator web application that helps users determine their energy storage needs and solar system requirements.
+<!-- Backend configured with GraphQL API - 2025-06-06 -->
 
-## Features
+A sophisticated Battery Energy Storage System (BESS) calculator designed for solar energy systems. Calculate optimal battery capacity, energy consumption, and get professional recommendations for your solar setup.
 
-- Calculate total daily energy consumption
-- Determine required battery capacity
-- Get recommended BESS size with 20% buffer
-- Calculate recommended solar system size (kWp)
-- Track critical vs non-critical devices
-- Visualize energy consumption patterns
-- View solar generation potential
-- Generate detailed PDF reports
-- Dark mode support
-- Local storage for saving calculations
-- Device suggestions with common power ratings
-- Input validation and error handling
-- Mobile-responsive design
-- Touch-friendly interface
+## 🌟 Features
 
-## Key Improvements
+- **Device Management**: Add multiple devices with power consumption details
+- **Time Range Selection**: Flexible operating and battery hours with visual time blocks
+- **Bulk CSV Upload**: Import multiple devices from CSV files with validation
+- **Interactive Charts**: Visual representation of energy distribution and device consumption
+- **PDF Reports**: Professional downloadable reports with charts and calculations
+- **Shareable Links**: Generate and share calculations with clients
+- **WhatsApp Integration**: Direct sharing to business contacts
+- **Customer Data Collection**: Collect prospect information for follow-up
+- **Mobile Responsive**: Works seamlessly on desktop and mobile devices
 
-- **Solar Integration**: Added solar generation calculations based on Malaysia's solar potential
-- **Critical Device Tracking**: Mark devices as critical for power outage scenarios
-- **Enhanced Visualization**: Energy distribution chart now includes solar generation data
-- **Improved UI/UX**: Larger, more touch-friendly controls for better mobile experience
-- **Responsive Design**: Optimized for both desktop and mobile devices
+## 🚀 Live Demo
 
-## Setup
+Visit the live application: [SolarEvo BESS Calculator](https://main.dhtgzifqa2qhp.amplifyapp.com)
 
-1. Install dependencies:
+## 📊 How It Works
+
+1. **Add Devices**: Input device details (name, power, quantity, operating hours)
+2. **Configure Time Ranges**: Set operating and battery backup hours using intuitive time blocks
+3. **Review Calculations**: Get instant calculations for total energy, battery capacity, and recommendations
+4. **Generate Reports**: Download professional PDF reports or share calculations via links
+5. **CSV Bulk Upload**: Upload multiple devices at once using our CSV template
+
+## 🛠️ Technical Features
+
+- **Modern Frontend**: Built with vanilla JavaScript and modern ES6+ features
+- **Chart Integration**: Chart.js for interactive data visualization
+- **PDF Generation**: jsPDF with custom styling and charts
+- **CSV Processing**: Robust CSV parsing with validation and error handling
+- **Responsive Design**: Mobile-first design with touch-friendly interfaces
+- **Time Management**: Sophisticated time range validation and conflict resolution
+- **Data Persistence**: Local storage for session management
+- **URL Sharing**: Advanced link generation with data encoding
+
+## 📱 Device Compatibility
+
+- ✅ Desktop browsers (Chrome, Firefox, Safari, Edge)
+- ✅ Mobile devices (iOS Safari, Android Chrome)
+- ✅ Tablet interfaces
+- ✅ Progressive Web App features
+
+## 🔧 Installation & Development
+
 ```bash
+# Clone the repository
+git clone https://github.com/andrewbao86/SolarEvo.git
+
+# Navigate to project directory
+cd SolarEvo
+
+# Install dependencies
 npm install
-```
 
-2. Start the development server:
-```bash
+# Start development server
 npm start
-```
 
-## Deployment
-
-This project is configured for deployment on AWS Amplify. The deployment process includes:
-
-1. Automatic deployment on push to the main branch
-2. Static site hosting with build process
-3. Files are copied to a `dist` directory during build
-
-### Manual Deployment
-
-To deploy manually:
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Run linting:
-```bash
-npm run lint
-```
-
-3. Build the project:
-```bash
+# Build for production
 npm run build
 ```
 
-4. The built files will be in the `dist` directory
+## 📦 Project Structure
 
-## Project Structure
-
-- `dist/` - Build output directory
-- `index.html` - Main entry point
-- `script.js` - Application logic
-- `styles.css` - Styling
-- `thank-you.html` - Thank you page
-- `bao-service-logo.svg` - Logo asset
-
-## Requirements
-
-- Node.js >= 14.0.0
-- npm >= 6.0.0
-
-## Usage
-
-1. Open the application in a modern web browser
-2. Enter your name (required for report generation)
-3. Add devices with their:
-   - Power consumption (W)
-   - Quantity
-   - Operating hours
-   - Battery backup hours
-   - Critical status (for power outage scenarios)
-4. View real-time calculations:
-   - Total daily energy consumption
-   - Required battery capacity
-   - Recommended BESS size
-   - Recommended solar system size
-   - SolarEvo BESS product recommendation
-5. Generate and download a detailed PDF report
-
-## Technologies Used
-
-- HTML5
-- CSS3
-- JavaScript
-- Chart.js for data visualization
-- jsPDF for PDF generation
-- Local Storage for data persistence
-- AWS Amplify for hosting
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## Acknowledgments
-
-- SolarEvo for BESS product specifications
-- Chart.js for visualization capabilities
-- jsPDF library for PDF generation
-- Contributors and users of the BESS Calculator
-
-## License
-
-See [LICENSE](LICENSE) file for details.
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/your-username/bess-calculator.git
+```
+SolarEvo/
+├── index.html          # Main application file
+├── script.js           # Application logic and functionality
+├── styles.css          # Styling and responsive design
+├── thank-you.html      # Post-download thank you page
+├── amplify.yml         # AWS Amplify build configuration
+├── vite.config.js      # Vite build configuration
+└── README.md           # Project documentation
 ```
 
-2. Navigate to the project directory:
-```bash
-cd bess-calculator
-```
+## 🌍 Deployment
 
-3. Open `index.html` in your web browser or serve it using a local server.
+The application is deployed using AWS Amplify with automatic deployments from the main branch. The build process includes:
 
-For development, you can use any local server. For example, with Python:
-```bash
-# Python 3
-python -m http.server 8000
-```
+- Modern JavaScript bundling with Vite
+- Legacy browser support
+- Asset optimization
+- Progressive Web App configuration
 
-Then visit `http://localhost:8000` in your browser.
+## 📈 SolarEvo Product Integration
 
-## Technologies Used
-```
-bess-calculator/
-├── index.html          # Main application page
-├── styles.css          # Stylesheet
-├── script.js          # Main JavaScript file
-├── assets/            # Images and other assets
-├── screenshots/       # Project screenshots
-└── README.md         # Project documentation
-```
+The calculator provides intelligent recommendations for SolarEvo's BESS product lineup:
+- **SE-BES-5.12**: 5.12 kWh systems for residential use
+- **SE-BES-10.24**: 10.24 kWh systems for larger homes
+- **SE-BES-15.36**: 15.36 kWh systems for commercial applications
+- **Custom Solutions**: Recommendations for larger requirements
 
-## Contributing
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 🤝 Contributing
 
-## Acknowledgments
-- Icons and design inspiration from various open-source projects
-- jsPDF library for PDF generation
-- Contributors and users of the BESS Calculator
+We welcome contributions! Please feel free to submit issues, feature requests, or pull requests.
+
+## 📞 Support
+
+For technical support or business inquiries:
+- **Website**: [SolarEvo.com](https://solarevo.com)
+- **Email**: info@solarevo.com
+- **WhatsApp**: +60 16-301 6170
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Built with ❤️ by SolarEvo Team**
+
+*Empowering sustainable energy solutions through innovative technology.*

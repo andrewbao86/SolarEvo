@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarEvo BESS Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Admin-specific styles */
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+        
+        .admin-title {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .auth-section {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            max-width: 400px;
+            margin: 100px auto;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .auth-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .filter-input {
+            padding: 8px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .action-btn.primary {
+            background: var(--primary-color);
+        }
+        
+        .action-btn.danger {
+            background: #e74c3c;
+        }
+        
+        .data-table {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .table-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .table-stats {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .records-table th,
+        .records-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .records-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .records-table th:hover {
+            background: var(--border-color);
+        }
+        
+        .records-table tr:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .row-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .row-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .row-btn.view {
+            background: #007bff;
+            color: white;
+        }
+        
+        .row-btn.download {
+            background: #28a745;
+            color: white;
+        }
+        
+        .row-btn.delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+        
+        .page-btn {
+            padding: 8px 12px;
+            border: 2px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .page-btn:hover,
+        .page-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .device-details {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .filters {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions-bar {
+                justify-content: center;
+            }
+            
+            .table-wrapper {
+                font-size: 14px;
+            }
+            
+            .records-table th,
+            .records-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Authentication Section -->
+        <div id="auth-section" class="auth-section">
+            <h2>🔋 SolarEvo Admin Access</h2>
+            <p>Enter your credentials to access the dashboard</p>
+            <input type="text" id="admin-username" class="auth-input" placeholder="Username: admin">
+            <input type="password" id="admin-password" class="auth-input" placeholder="Password: solarevo2024">
+            <button onclick="authenticate()" class="auth-button">Login</button>
+            <div id="auth-error" style="color: red; margin-top: 10px; display: none;"></div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="dashboard" class="hidden">
+            <div class="admin-header">
+                <h1>🔋 BESS Calculator Admin Dashboard</h1>
+                <div>
+                    <button onclick="refreshData()" class="action-btn primary">🔄 Refresh</button>
+                    <button onclick="logout()" class="action-btn">🚪 Logout</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label>🔍 Search</label>
+                    <input type="text" id="search-filter" class="filter-input" placeholder="Name, email, or mobile..." oninput="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>📅 Date From</label>
+                    <input type="date" id="date-from" class="filter-input" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>📅 Date To</label>
+                    <input type="date" id="date-to" class="filter-input" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>📊 Status</label>
+                    <select id="status-filter" class="filter-input" onchange="applyFilters()">
+                        <option value="">All</option>
+                        <option value="active">Active</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-bar">
+                <button onclick="exportToCSV()" class="action-btn primary">📥 Export CSV</button>
+                <button onclick="deleteExpired()" class="action-btn" style="background: #dc3545;">🗑️ Delete Expired</button>
+            </div>
+
+            <!-- Data Table -->
+            <div class="data-table">
+                <div class="table-header">
+                    <h3>Customer Calculations</h3>
+                    <div id="table-stats">Loading...</div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('createdAt')">📅 Date</th>
+                                <th onclick="sortTable('creatorName')">👤 Name</th>
+                                <th onclick="sortTable('creatorEmail')">📧 Email</th>
+                                <th onclick="sortTable('creatorMobile')">📱 Mobile</th>
+                                <th>🔋 Devices</th>
+                                <th>⚡ Total Energy</th>
+                                <th>🔋 Battery Capacity</th>
+                                <th onclick="sortTable('isActive')">📊 Status</th>
+                                <th>⚙️ Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-tbody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 40px;">Loading records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Admin configuration
+        const ADMIN_CREDENTIALS = {
+            username: 'admin',
+            password: 'solarevo2024'
+        };
+
+        let allRecords = [];
+        let filteredRecords = [];
+        let sortColumn = 'createdAt';
+        let sortDirection = 'desc';
+
+        // Authentication
+        function authenticate() {
+            const username = document.getElementById('admin-username').value;
+            const password = document.getElementById('admin-password').value;
+            const errorDiv = document.getElementById('auth-error');
+
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                loadRecords();
+            } else {
+                errorDiv.textContent = 'Invalid credentials';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function logout() {
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('admin-username').value = '';
+            document.getElementById('admin-password').value = '';
+        }
+
+        // Data loading
+        async function loadRecords() {
+            try {
+                // Check if backend is configured
+                if (typeof client !== 'undefined' && client) {
+                    const query = `
+                        query ListSharedCalculations {
+                            listSharedCalculations {
+                                items {
+                                    id
+                                    creatorName
+                                    creatorEmail
+                                    creatorMobile
+                                    devices
+                                    calculations
+                                    createdAt
+                                    expiresAt
+                                    isActive
+                                }
+                            }
+                        }
+                    `;
+
+                    const result = await client.graphql({ query });
+                    allRecords = result.data.listSharedCalculations.items;
+                } else {
+                    // Generate sample data for demonstration
+                    allRecords = generateSampleData();
+                }
+                
+                applyFilters();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading records:', error);
+                // Fall back to sample data
+                allRecords = generateSampleData();
+                applyFilters();
+                updateStats();
+            }
+        }
+
+        // Generate sample data
+        function generateSampleData() {
+            const names = ['John Doe', 'Jane Smith', 'Robert Johnson', 'Emily Davis', 'Michael Brown'];
+            const sampleData = [];
+
+            for (let i = 0; i < 20; i++) {
+                const createdAt = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
+                const expiresAt = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+                const isActive = expiresAt > new Date();
+
+                sampleData.push({
+                    id: `calc_${i + 1}`,
+                    creatorName: names[Math.floor(Math.random() * names.length)],
+                    creatorEmail: `user${i + 1}@example.com`,
+                    creatorMobile: `+60${Math.floor(100000000 + Math.random() * 900000000)}`,
+                    devices: [
+                        { name: 'Air Conditioner', power: 1200, quantity: Math.floor(Math.random() * 3) + 1 },
+                        { name: 'Fridge', power: 250, quantity: 1 }
+                    ],
+                    calculations: {
+                        totalEnergy: `${(Math.random() * 20 + 5).toFixed(2)} kWh`,
+                        batteryCapacity: `${(Math.random() * 15 + 3).toFixed(2)} kWh`,
+                        recommendedSize: `${(Math.random() * 18 + 4).toFixed(2)} kWh`
+                    },
+                    createdAt: createdAt.toISOString(),
+                    expiresAt: expiresAt.toISOString(),
+                    isActive: isActive
+                });
+            }
+
+            return sampleData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
+        // Filtering and sorting
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-filter').value.toLowerCase();
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            const statusFilter = document.getElementById('status-filter').value;
+
+            filteredRecords = allRecords.filter(record => {
+                const matchesSearch = !searchTerm || 
+                    record.creatorName.toLowerCase().includes(searchTerm) ||
+                    record.creatorEmail.toLowerCase().includes(searchTerm) ||
+                    record.creatorMobile.includes(searchTerm);
+
+                const recordDate = new Date(record.createdAt).toISOString().split('T')[0];
+                const matchesDateFrom = !dateFrom || recordDate >= dateFrom;
+                const matchesDateTo = !dateTo || recordDate <= dateTo;
+
+                const matchesStatus = !statusFilter || 
+                    (statusFilter === 'active' && record.isActive) ||
+                    (statusFilter === 'expired' && !record.isActive);
+
+                return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus;
+            });
+
+            sortRecords();
+            renderTable();
+        }
+
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'desc';
+            }
+            sortRecords();
+            renderTable();
+        }
+
+        function sortRecords() {
+            filteredRecords.sort((a, b) => {
+                let aVal = a[sortColumn];
+                let bVal = b[sortColumn];
+
+                if (sortColumn === 'createdAt') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                }
+
+                if (sortDirection === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+        }
+
+        // Rendering
+        function renderTable() {
+            const tbody = document.getElementById('records-tbody');
+
+            if (filteredRecords.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No records found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredRecords.map(record => `
+                <tr>
+                    <td>${new Date(record.createdAt).toLocaleDateString()}</td>
+                    <td>${record.creatorName}</td>
+                    <td>${record.creatorEmail}</td>
+                    <td>${record.creatorMobile}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${record.devices.map(d => `${d.name} (${d.power}W x${d.quantity})`).join(', ')}</td>
+                    <td>${record.calculations.totalEnergy}</td>
+                    <td>${record.calculations.batteryCapacity}</td>
+                    <td><span class="status-badge ${record.isActive ? 'status-active' : 'status-expired'}">${record.isActive ? 'Active' : 'Expired'}</span></td>
+                    <td>
+                        <button class="row-btn view" onclick="viewRecord('${record.id}')">👁️</button>
+                        <button class="row-btn download" onclick="downloadRecord('${record.id}')">📥</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats() {
+            const total = allRecords.length;
+            const active = allRecords.filter(r => r.isActive).length;
+            const expired = total - active;
+
+            document.getElementById('table-stats').textContent = 
+                `Total: ${total} | Active: ${active} | Expired: ${expired} | Showing: ${filteredRecords.length}`;
+        }
+
+        // Actions
+        function refreshData() {
+            loadRecords();
+        }
+
+        function viewRecord(id) {
+            const record = allRecords.find(r => r.id === id);
+            if (record) {
+                const shareUrl = `${window.location.origin}/index.html?share=${id}`;
+                window.open(shareUrl, '_blank');
+            }
+        }
+
+        function downloadRecord(id) {
+            const record = allRecords.find(r => r.id === id);
+            if (record) {
+                const dataStr = JSON.stringify(record, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `bess_calculation_${record.creatorName.replace(/\s+/g, '_')}_${id}.json`;
+                link.click();
+                
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function exportToCSV() {
+            const headers = ['Date', 'Name', 'Email', 'Mobile', 'Devices', 'Total Energy', 'Battery Capacity', 'Status'];
+            const csvContent = [
+                headers.join(','),
+                ...filteredRecords.map(record => [
+                    new Date(record.createdAt).toLocaleDateString(),
+                    `"${record.creatorName}"`,
+                    record.creatorEmail,
+                    record.creatorMobile,
+                    `"${record.devices.map(d => `${d.name} (${d.power}W x${d.quantity})`).join('; ')}"`,
+                    record.calculations.totalEnergy,
+                    record.calculations.batteryCapacity,
+                    record.isActive ? 'Active' : 'Expired'
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `bess_calculations_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function deleteExpired() {
+            const expiredCount = allRecords.filter(r => !r.isActive).length;
+            if (expiredCount === 0) {
+                alert('No expired records to delete');
+                return;
+            }
+
+            if (confirm(`Delete ${expiredCount} expired records?`)) {
+                allRecords = allRecords.filter(r => r.isActive);
+                applyFilters();
+                updateStats();
+                alert(`${expiredCount} expired records deleted`);
+            }
+        }
+
+        // Enter key for authentication
+        document.getElementById('admin-password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                authenticate();
+            }
+        });
+    </script>
+</body>
+</html> 

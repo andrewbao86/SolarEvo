@@ -860,6 +860,22 @@ input:focus {
     color: #0066cc;
 }
 
+/* Admin link styling */
+.admin-link {
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.admin-link:hover {
+    color: #ff9500 !important;
+    opacity: 1;
+    transform: rotate(45deg);
+}
+
+[data-theme="dark"] .admin-link:hover {
+    color: #ff9500 !important;
+}
+
 /* Dark theme adjustments for social icons */
 [data-theme="dark"] .social-icon {
     color: var(--text-color);
