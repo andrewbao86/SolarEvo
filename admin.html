@@ -314,7 +314,10 @@
         <div id="dashboard" class="hidden">
             <div class="admin-header">
                 <h1>🔋 BESS Calculator Admin Dashboard</h1>
-                <div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="connection-status" style="padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                        🔄 Checking connection...
+                    </div>
                     <button onclick="refreshData()" class="action-btn primary">🔄 Refresh</button>
                     <button onclick="logout()" class="action-btn">🚪 Logout</button>
                 </div>
@@ -382,7 +385,77 @@
         </div>
     </div>
 
-    <script>
+    <!-- AWS Amplify and GraphQL setup -->
+    <script type="module">
+        // Import AWS Amplify components
+        import { Amplify } from 'aws-amplify';
+        import { generateClient } from 'aws-amplify/api';
+        import awsExports from './src/aws-exports.js';
+        import { 
+            listSharedCalculations,
+            getSharedCalculation,
+            updateSharedCalculation
+        } from './src/graphql/operations.js';
+
+        // Additional GraphQL operations for admin functions
+        const deleteSharedCalculationMutation = /* GraphQL */ `
+            mutation DeleteSharedCalculation($input: DeleteSharedCalculationInput!) {
+                deleteSharedCalculation(input: $input) {
+                    id
+                    __typename
+                }
+            }
+        `;
+
+        // Configure Amplify
+        let client = null;
+        let isAmplifyConfigured = false;
+
+        try {
+            if (awsExports.aws_appsync_graphqlEndpoint && awsExports.aws_appsync_graphqlEndpoint.trim() !== '') {
+                Amplify.configure(awsExports);
+                client = generateClient();
+                isAmplifyConfigured = true;
+                console.log('✅ Admin Dashboard: AWS Amplify configured successfully');
+                updateConnectionStatus('connected');
+            } else {
+                console.warn('⚠️ Admin Dashboard: AWS Amplify not configured');
+                updateConnectionStatus('not-configured');
+            }
+        } catch (error) {
+            console.warn('⚠️ Admin Dashboard: AWS Amplify configuration failed:', error.message);
+            updateConnectionStatus('error');
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connection-status');
+            if (!statusElement) return;
+
+            switch (status) {
+                case 'connected':
+                    statusElement.style.background = '#d4edda';
+                    statusElement.style.color = '#155724';
+                    statusElement.textContent = '🟢 Database Connected';
+                    break;
+                case 'not-configured':
+                    statusElement.style.background = '#fff3cd';
+                    statusElement.style.color = '#856404';
+                    statusElement.textContent = '🟡 Using Sample Data';
+                    break;
+                case 'error':
+                    statusElement.style.background = '#f8d7da';
+                    statusElement.style.color = '#721c24';
+                    statusElement.textContent = '🔴 Connection Failed';
+                    break;
+                case 'loading':
+                    statusElement.style.background = '#e2e3e5';
+                    statusElement.style.color = '#383d41';
+                    statusElement.textContent = '🔄 Loading...';
+                    break;
+            }
+        }
+
         // Admin configuration
         const ADMIN_CREDENTIALS = {
             username: 'admin',
@@ -417,44 +490,87 @@
             document.getElementById('admin-password').value = '';
         }
 
-        // Data loading
+        // Data loading from real database
         async function loadRecords() {
             try {
-                // Check if backend is configured
-                if (typeof client !== 'undefined' && client) {
-                    const query = `
-                        query ListSharedCalculations {
-                            listSharedCalculations {
-                                items {
-                                    id
-                                    creatorName
-                                    creatorEmail
-                                    creatorMobile
-                                    devices
-                                    calculations
-                                    createdAt
-                                    expiresAt
-                                    isActive
-                                }
+                console.log('🔄 Loading records from database...');
+                updateConnectionStatus('loading');
+                
+                // Show loading in table
+                const tbody = document.getElementById('records-tbody');
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">🔄 Loading records from database...</td></tr>';
+                
+                if (isAmplifyConfigured && client) {
+                    // First, get the list of all calculations with basic info
+                    const listResult = await client.graphql({ 
+                        query: listSharedCalculations 
+                    });
+                    
+                    const calculationIds = listResult.data.listSharedCalculations.items.map(item => item.id);
+                    console.log(`📊 Found ${calculationIds.length} calculations in database`);
+                    
+                    // Now fetch full details for each calculation
+                    const detailedRecords = await Promise.all(
+                        calculationIds.map(async (id) => {
+                            try {
+                                const detailResult = await client.graphql({
+                                    query: getSharedCalculation,
+                                    variables: { id }
+                                });
+                                return detailResult.data.getSharedCalculation;
+                            } catch (error) {
+                                console.warn(`⚠️ Failed to load details for record ${id}:`, error);
+                                return null;
                             }
-                        }
-                    `;
-
-                    const result = await client.graphql({ query });
-                    allRecords = result.data.listSharedCalculations.items;
+                        })
+                    );
+                    
+                    // Filter out any null results and update expiry status
+                    allRecords = detailedRecords
+                        .filter(record => record !== null)
+                        .map(record => {
+                            // Update isActive based on expiry date
+                            const isExpired = new Date() > new Date(record.expiresAt);
+                            return {
+                                ...record,
+                                isActive: !isExpired
+                            };
+                        });
+                    
+                    console.log(`✅ Successfully loaded ${allRecords.length} detailed records`);
+                    updateConnectionStatus('connected');
+                    
                 } else {
-                    // Generate sample data for demonstration
+                    console.warn('⚠️ Backend not configured, using sample data');
                     allRecords = generateSampleData();
+                    updateConnectionStatus('not-configured');
                 }
                 
                 applyFilters();
                 updateStats();
+                
             } catch (error) {
-                console.error('Error loading records:', error);
-                // Fall back to sample data
-                allRecords = generateSampleData();
-                applyFilters();
-                updateStats();
+                console.error('❌ Error loading records from database:', error);
+                updateConnectionStatus('error');
+                
+                // Show user-friendly error message
+                const tbody = document.getElementById('records-tbody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px; color: #e74c3c;">
+                            <div>
+                                <h3>⚠️ Database Connection Error</h3>
+                                <p>Failed to load records from database: ${error.message}</p>
+                                <button onclick="loadRecords()" style="margin-top: 10px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    🔄 Retry
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                
+                // Also update stats to show error state
+                document.getElementById('table-stats').textContent = 'Error loading data';
             }
         }
 
@@ -557,22 +673,40 @@
                 return;
             }
 
-            tbody.innerHTML = filteredRecords.map(record => `
-                <tr>
-                    <td>${new Date(record.createdAt).toLocaleDateString()}</td>
-                    <td>${record.creatorName}</td>
-                    <td>${record.creatorEmail}</td>
-                    <td>${record.creatorMobile}</td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${record.devices.map(d => `${d.name} (${d.power}W x${d.quantity})`).join(', ')}</td>
-                    <td>${record.calculations.totalEnergy}</td>
-                    <td>${record.calculations.batteryCapacity}</td>
-                    <td><span class="status-badge ${record.isActive ? 'status-active' : 'status-expired'}">${record.isActive ? 'Active' : 'Expired'}</span></td>
-                    <td>
-                        <button class="row-btn view" onclick="viewRecord('${record.id}')">👁️</button>
-                        <button class="row-btn download" onclick="downloadRecord('${record.id}')">📥</button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = filteredRecords.map(record => {
+                // Format devices display
+                let devicesDisplay = 'No devices';
+                if (record.devices && Array.isArray(record.devices) && record.devices.length > 0) {
+                    devicesDisplay = record.devices
+                        .map(d => `${d.name} (${d.power}W x${d.quantity})`)
+                        .join(', ');
+                }
+                
+                // Format calculations display
+                const totalEnergy = record.calculations?.totalEnergy || 'N/A';
+                const batteryCapacity = record.calculations?.batteryCapacity || 'N/A';
+                
+                // Format date
+                const createdDate = record.createdAt ? new Date(record.createdAt).toLocaleDateString() : 'N/A';
+                
+                return `
+                    <tr>
+                        <td>${createdDate}</td>
+                        <td>${record.creatorName || 'N/A'}</td>
+                        <td>${record.creatorEmail || 'N/A'}</td>
+                        <td>${record.creatorMobile || 'N/A'}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${devicesDisplay}">${devicesDisplay}</td>
+                        <td>${totalEnergy}</td>
+                        <td>${batteryCapacity}</td>
+                        <td><span class="status-badge ${record.isActive ? 'status-active' : 'status-expired'}">${record.isActive ? 'Active' : 'Expired'}</span></td>
+                        <td>
+                            <button class="row-btn view" onclick="viewRecord('${record.id}')">👁️</button>
+                            <button class="row-btn download" onclick="downloadRecord('${record.id}')">📥</button>
+                            <button class="row-btn delete" onclick="deleteRecord('${record.id}')" style="background: #dc3545; color: white;">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function updateStats() {
@@ -638,25 +772,108 @@
             URL.revokeObjectURL(url);
         }
 
-        function deleteExpired() {
-            const expiredCount = allRecords.filter(r => !r.isActive).length;
-            if (expiredCount === 0) {
+        // Delete a single record from database
+        async function deleteRecord(id) {
+            if (!confirm('Are you sure you want to delete this record?')) {
+                return;
+            }
+
+            try {
+                if (isAmplifyConfigured && client) {
+                    await client.graphql({
+                        query: deleteSharedCalculationMutation,
+                        variables: { 
+                            input: { id } 
+                        }
+                    });
+                    console.log(`✅ Deleted record ${id} from database`);
+                } else {
+                    console.warn('⚠️ Backend not configured, removing from local list only');
+                }
+                
+                // Remove from local list
+                allRecords = allRecords.filter(r => r.id !== id);
+                applyFilters();
+                updateStats();
+                
+            } catch (error) {
+                console.error('❌ Error deleting record:', error);
+                alert(`Failed to delete record: ${error.message}`);
+            }
+        }
+
+        // Delete all expired records from database
+        async function deleteExpired() {
+            const expiredRecords = allRecords.filter(r => !r.isActive);
+            if (expiredRecords.length === 0) {
                 alert('No expired records to delete');
                 return;
             }
 
-            if (confirm(`Delete ${expiredCount} expired records?`)) {
+            if (!confirm(`Delete ${expiredRecords.length} expired records?`)) {
+                return;
+            }
+
+            try {
+                let deletedCount = 0;
+                
+                if (isAmplifyConfigured && client) {
+                    // Delete each expired record from database
+                    for (const record of expiredRecords) {
+                        try {
+                            await client.graphql({
+                                query: deleteSharedCalculationMutation,
+                                variables: { 
+                                    input: { id: record.id } 
+                                }
+                            });
+                            deletedCount++;
+                        } catch (error) {
+                            console.warn(`⚠️ Failed to delete record ${record.id}:`, error);
+                        }
+                    }
+                    console.log(`✅ Deleted ${deletedCount} expired records from database`);
+                } else {
+                    deletedCount = expiredRecords.length;
+                    console.warn('⚠️ Backend not configured, removing from local list only');
+                }
+                
+                // Remove from local list
                 allRecords = allRecords.filter(r => r.isActive);
                 applyFilters();
                 updateStats();
-                alert(`${expiredCount} expired records deleted`);
+                
+                alert(`${deletedCount} expired records deleted`);
+                
+            } catch (error) {
+                console.error('❌ Error deleting expired records:', error);
+                alert(`Failed to delete some records: ${error.message}`);
             }
         }
 
+        // Make functions global for onclick handlers
+        window.authenticate = authenticate;
+        window.logout = logout;
+        window.loadRecords = loadRecords;
+        window.refreshData = refreshData;
+        window.viewRecord = viewRecord;
+        window.downloadRecord = downloadRecord;
+        window.deleteRecord = deleteRecord;
+        window.exportToCSV = exportToCSV;
+        window.deleteExpired = deleteExpired;
+        window.applyFilters = applyFilters;
+        window.sortTable = sortTable;
+        window.updateConnectionStatus = updateConnectionStatus;
+
         // Enter key for authentication
-        document.getElementById('admin-password').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                authenticate();
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('admin-password');
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        authenticate();
+                    }
+                });
             }
         });
     </script>
