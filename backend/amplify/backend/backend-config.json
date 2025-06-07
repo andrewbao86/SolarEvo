@@ -1,0 +1,47 @@
+{
+  "api": {
+    "solarevobesscalAPI": {
+      "dependsOn": [],
+      "output": {
+        "authConfig": {
+          "additionalAuthenticationProviders": [],
+          "defaultAuthentication": {
+            "apiKeyConfig": {
+              "apiKeyExpirationDate": "2026-06-05T10:33:56.786Z",
+              "apiKeyExpirationDays": 365,
+              "description": "SOLAREVO BESS CALCULATOR API KEY"
+            },
+            "authenticationType": "API_KEY"
+          }
+        }
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "AppSync"
+    }
+  },
+  "function": {
+    "sharedCalculationResolver": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_sharedCalculationResolver_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "sharedCalculationResolver"
+        }
+      ]
+    },
+    "AMPLIFY_function_sharedCalculationResolver_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "sharedCalculationResolver"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "prod": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-solarevobesscal-prod-eab9a-authRole",
+      "UnauthRoleArn": "arn:aws:iam::927009813542:role/amplify-solarevobesscal-prod-eab9a-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::927009813542:role/amplify-solarevobesscal-prod-eab9a-authRole",
+      "Region": "ap-northeast-1",
+      "DeploymentBucketName": "amplify-solarevobesscal-prod-eab9a-deployment",
+      "UnauthRoleName": "amplify-solarevobesscal-prod-eab9a-unauthRole",
+      "StackName": "amplify-solarevobesscal-prod-eab9a",
+      "StackId": "arn:aws:cloudformation:ap-northeast-1:927009813542:stack/amplify-solarevobesscal-prod-eab9a/ff0efa50-41f5-11f0-bd8d-06ebd3a2f1a9",
+      "AmplifyAppId": "d141tn35y3j700"
+    },
+    "categories": {
+      "function": {
+        "sharedCalculationResolver": {
+          "deploymentBucketName": "amplify-solarevobesscal-prod-eab9a-deployment",
+          "s3Key": "amplify-builds/sharedCalculationResolver-3665505455504b654d42-build.zip"
+        }
+      },
+      "api": {
+        "solarevobesscalAPI": {}
+      }
+    }
+  }
+}
