@@ -10,17 +10,20 @@ backend:
         - echo "Building backend with TypeScript compilation"
         - npm run build
         - echo "Backend build completed"
+        - cd ../..
 frontend:
   phases:
     preBuild:
       commands:
+        - echo "Installing frontend dependencies from root directory"
         - npm install
         - echo "Frontend dependencies installed"
     build:
       commands:
-        - echo "Building frontend with Vite"
+        - echo "Building frontend with Vite from root directory"
+        - pwd
         - npm run build
-        - echo "Frontend build completed"
+        - echo "Frontend build completed - checking artifacts"
         - ls -la dist/
   artifacts:
     baseDirectory: dist
