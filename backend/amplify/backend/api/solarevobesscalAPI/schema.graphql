@@ -1,0 +1,84 @@
+# This "input" configures a global authorization rule to enable public access to
+# all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
+input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
+
+
+type SharedCalculation {
+  id: ID!
+  createdAt: AWSDateTime!
+  expiresAt: AWSDateTime!
+  creatorName: String!
+  creatorEmail: String!
+  creatorMobile: String!
+  devices: [DeviceInput!]!
+  calculations: CalculationResults!
+  isActive: Boolean!
+}
+
+type DeviceInput {
+  name: String!
+  power: Float!
+  quantity: Int!
+  operatingHours: Float!
+  batteryHours: Float!
+  operatingRanges: [TimeRange!]!
+  batteryRanges: [TimeRange!]!
+  critical: Boolean!
+}
+
+type TimeRange {
+  start: Int!
+  end: Int!
+}
+
+type CalculationResults {
+  totalEnergy: String!
+  batteryCapacity: String!
+  recommendedSize: String!
+  solarevoRecommendation: String!
+}
+
+input CreateSharedCalculationInput {
+  creatorName: String!
+  creatorEmail: String!
+  creatorMobile: String!
+  devices: [DeviceInputInput!]!
+  calculations: CalculationResultsInput!
+}
+
+input DeviceInputInput {
+  name: String!
+  power: Float!
+  quantity: Int!
+  operatingHours: Float!
+  batteryHours: Float!
+  operatingRanges: [TimeRangeInput!]!
+  batteryRanges: [TimeRangeInput!]!
+  critical: Boolean!
+}
+
+input TimeRangeInput {
+  start: Int!
+  end: Int!
+}
+
+input CalculationResultsInput {
+  totalEnergy: String!
+  batteryCapacity: String!
+  recommendedSize: String!
+  solarevoRecommendation: String!
+}
+
+type Query {
+  getActiveSharedCalculation(id: ID!): SharedCalculation
+}
+
+type Mutation {
+  createSharedCalculation(input: CreateSharedCalculationInput!): SharedCalculation
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
