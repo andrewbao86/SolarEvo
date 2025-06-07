@@ -5,7 +5,7 @@ backend:
       commands:
         - cd backend/amplify
         - npm ci
-        - npx ampx generate graphql-client-code --format=graphql-codegen --out=../../frontend/js/graphql
+        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:
     preBuild:
