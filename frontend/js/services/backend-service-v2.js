@@ -25,11 +25,15 @@ class BackendServiceV2 {
                 apiKey: awsExports.aws_appsync_apiKey ? 'SET' : 'MISSING'
             });
 
-            // Only configure if we have a valid GraphQL endpoint
+            // Only configure if we have a valid (non-placeholder) GraphQL endpoint
             if (awsExports.aws_appsync_graphqlEndpoint && 
                 awsExports.aws_appsync_graphqlEndpoint.trim() !== '' &&
+                !awsExports.aws_appsync_graphqlEndpoint.includes('placeholder') &&
+                !awsExports.aws_appsync_graphqlEndpoint.includes('placeholder-api-endpoint') &&
                 awsExports.aws_appsync_apiKey && 
-                awsExports.aws_appsync_apiKey.trim() !== '') {
+                awsExports.aws_appsync_apiKey.trim() !== '' &&
+                !awsExports.aws_appsync_apiKey.includes('placeholder') &&
+                awsExports.aws_appsync_apiKey !== 'placeholder-api-key') {
                 
                 Amplify.configure(awsExports);
                 this.client = generateClient();
@@ -39,7 +43,7 @@ class BackendServiceV2 {
                 this.debugAlert('✅ Backend Connected', 'Database-stored sharing enabled', 'success');
             } else {
                 this.fallbackMode = true;
-                this.debugAlert('⚠️ Backend Fallback Mode', 'Using URL encoding (backend unavailable)', 'warning');
+                this.debugAlert('⚠️ Backend Fallback Mode', 'AWS not configured - using URL encoding', 'warning');
             }
         } catch (error) {
             this.fallbackMode = true;
@@ -121,7 +125,9 @@ class BackendServiceV2 {
             };
 
         } catch (error) {
-            this.debugAlert('❌ Database Share Failed', `Error: ${error.message}\nTrying fallback...`, 'error');
+            console.error('❌ Full Database Share Error:', error);
+            console.error('❌ Variables passed:', variables);
+            this.debugAlert('❌ Database Share Failed', `Error: ${error.message || 'Unknown error'}\nTrying fallback...`, 'error');
             
             // Fallback to URL encoding if database fails
             return this.createFallbackShare(data);
