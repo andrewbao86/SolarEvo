@@ -12,7 +12,7 @@ export class BackendService {
     async init() {
         try {
             // Import AWS config
-            const { default: awsExports } = await import('../config/aws-exports.js');
+            const { default: awsExports } = await import('../../config/aws-exports.js');
             this.awsConfig = awsExports;
 
             console.log('🔧 Backend Service Initializing...', {
