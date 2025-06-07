@@ -15,27 +15,33 @@ class BackendServiceV2 {
 
     async init() {
         try {
-            // Import AWS config
+            // Import AWS config and runtime config
             const { default: awsExports } = await import('../../config/aws-exports.js');
-            this.awsConfig = awsExports;
+            const { default: runtimeConfig } = await import('../../config/runtime-config.js');
+            
+            // Use runtime config if available, fallback to aws-exports
+            const isRuntimeConfigured = await runtimeConfig.isConfigured();
+            const config = isRuntimeConfigured ? await runtimeConfig.getConfig() : awsExports;
+            this.awsConfig = config;
 
             this.debugLog('🔧 Backend Service V2 Initializing...', {
-                region: awsExports.aws_project_region,
-                graphqlEndpoint: awsExports.aws_appsync_graphqlEndpoint ? 'SET' : 'MISSING',
-                apiKey: awsExports.aws_appsync_apiKey ? 'SET' : 'MISSING'
+                source: config.source || 'aws-exports',
+                region: config.aws_project_region,
+                graphqlEndpoint: config.aws_appsync_graphqlEndpoint ? 'SET' : 'MISSING',
+                apiKey: config.aws_appsync_apiKey ? 'SET' : 'MISSING'
             });
 
             // Only configure if we have a valid (non-placeholder) GraphQL endpoint
-            if (awsExports.aws_appsync_graphqlEndpoint && 
-                awsExports.aws_appsync_graphqlEndpoint.trim() !== '' &&
-                !awsExports.aws_appsync_graphqlEndpoint.includes('placeholder') &&
-                !awsExports.aws_appsync_graphqlEndpoint.includes('placeholder-api-endpoint') &&
-                awsExports.aws_appsync_apiKey && 
-                awsExports.aws_appsync_apiKey.trim() !== '' &&
-                !awsExports.aws_appsync_apiKey.includes('placeholder') &&
-                awsExports.aws_appsync_apiKey !== 'placeholder-api-key') {
+            if (config.aws_appsync_graphqlEndpoint && 
+                config.aws_appsync_graphqlEndpoint.trim() !== '' &&
+                !config.aws_appsync_graphqlEndpoint.includes('placeholder') &&
+                !config.aws_appsync_graphqlEndpoint.includes('placeholder-api-endpoint') &&
+                config.aws_appsync_apiKey && 
+                config.aws_appsync_apiKey.trim() !== '' &&
+                !config.aws_appsync_apiKey.includes('placeholder') &&
+                config.aws_appsync_apiKey !== 'placeholder-api-key') {
                 
-                Amplify.configure(awsExports);
+                Amplify.configure(config);
                 this.client = generateClient();
                 this.isConfigured = true;
                 this.fallbackMode = false;
@@ -65,6 +71,17 @@ class BackendServiceV2 {
             if (window.UIController && window.UIController.showStatus) {
                 window.UIController.showStatus(`${title}: ${message}`, type);
             }
+            
+            // Store debug info globally for diagnostic purposes
+            if (!window.__DEBUG_BACKEND_LOG__) {
+                window.__DEBUG_BACKEND_LOG__ = [];
+            }
+            window.__DEBUG_BACKEND_LOG__.push({
+                timestamp: new Date().toISOString(),
+                title,
+                message,
+                type
+            });
         }
     }
 

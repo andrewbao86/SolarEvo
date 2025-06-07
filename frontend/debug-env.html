@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Variables Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 5px; }
+        .success { border-color: #00ff00; }
+        .warning { border-color: #ffaa00; }
+        .error { border-color: #ff0000; }
+        pre { background: #000; padding: 10px; overflow-x: auto; }
+        button { background: #333; color: #fff; border: 1px solid #555; padding: 10px; margin: 5px; cursor: pointer; }
+        button:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Environment Variables Diagnostic Tool</h1>
+    
+    <div class="section" id="vite-env">
+        <h2>1. Vite Environment Variables (import.meta.env)</h2>
+        <pre id="vite-env-output">Loading...</pre>
+    </div>
+    
+    <div class="section" id="aws-config">
+        <h2>2. AWS Exports Configuration</h2>
+        <pre id="aws-config-output">Loading...</pre>
+    </div>
+    
+    <div class="section" id="backend-service">
+        <h2>3. Backend Service V2 Status</h2>
+        <pre id="backend-service-output">Loading...</pre>
+    </div>
+    
+    <div class="section" id="test-actions">
+        <h2>4. Test Actions</h2>
+        <button onclick="testEnvAccess()">Test Environment Access</button>
+        <button onclick="testBackendInit()">Test Backend Initialization</button>
+        <button onclick="testShareCreation()">Test Share Creation</button>
+        <button onclick="exportDiagnostic()">Export Diagnostic Data</button>
+        <pre id="test-output"></pre>
+    </div>
+
+    <script type="module">
+        let diagnosticData = {};
+        
+        // Test 1: Check Vite environment variables
+        function checkViteEnv() {
+            const output = document.getElementById('vite-env-output');
+            const section = document.getElementById('vite-env');
+            
+            try {
+                const env = import.meta.env;
+                const envData = {
+                    MODE: env.MODE,
+                    DEV: env.DEV,
+                    PROD: env.PROD,
+                    VITE_API_ENDPOINT: env.VITE_API_ENDPOINT ? `SET (${env.VITE_API_ENDPOINT.substring(0, 50)}...)` : 'MISSING',
+                    VITE_API_KEY: env.VITE_API_KEY ? `SET (${env.VITE_API_KEY.substring(0, 20)}...)` : 'MISSING',
+                    AWS_REGION: env.AWS_REGION || 'MISSING',
+                    all_env_keys: Object.keys(env).filter(k => k.startsWith('VITE_'))
+                };
+                
+                diagnosticData.viteEnv = envData;
+                output.textContent = JSON.stringify(envData, null, 2);
+                
+                const hasRequired = env.VITE_API_ENDPOINT && env.VITE_API_KEY && 
+                                   !env.VITE_API_ENDPOINT.includes('placeholder') && 
+                                   !env.VITE_API_KEY.includes('placeholder');
+                
+                section.className = `section ${hasRequired ? 'success' : 'warning'}`;
+                
+            } catch (error) {
+                output.textContent = `ERROR: ${error.message}`;
+                section.className = 'section error';
+                diagnosticData.viteEnv = { error: error.message };
+            }
+        }
+        
+        // Test 2: Check AWS configuration
+        async function checkAWSConfig() {
+            const output = document.getElementById('aws-config-output');
+            const section = document.getElementById('aws-config');
+            
+            try {
+                const { default: awsExports } = await import('./config/aws-exports.js');
+                
+                const configData = {
+                    aws_project_region: awsExports.aws_project_region,
+                    aws_appsync_graphqlEndpoint: awsExports.aws_appsync_graphqlEndpoint?.substring(0, 80) + '...',
+                    aws_appsync_apiKey: awsExports.aws_appsync_apiKey?.substring(0, 30) + '...',
+                    isPlaceholder: {
+                        endpoint: awsExports.aws_appsync_graphqlEndpoint?.includes('placeholder'),
+                        apiKey: awsExports.aws_appsync_apiKey?.includes('placeholder') || awsExports.aws_appsync_apiKey === 'placeholder-api-key'
+                    }
+                };
+                
+                diagnosticData.awsConfig = configData;
+                output.textContent = JSON.stringify(configData, null, 2);
+                
+                const isValid = !configData.isPlaceholder.endpoint && !configData.isPlaceholder.apiKey;
+                section.className = `section ${isValid ? 'success' : 'warning'}`;
+                
+            } catch (error) {
+                output.textContent = `ERROR: ${error.message}`;
+                section.className = 'section error';
+                diagnosticData.awsConfig = { error: error.message };
+            }
+        }
+        
+        // Test 3: Check Backend Service status
+        async function checkBackendService() {
+            const output = document.getElementById('backend-service-output');
+            const section = document.getElementById('backend-service');
+            
+            try {
+                // Check if BackendServiceV2 is available
+                if (window.BackendServiceV2) {
+                    await window.BackendServiceV2.init();
+                    const status = window.BackendServiceV2.getStatus();
+                    
+                    diagnosticData.backendService = status;
+                    output.textContent = JSON.stringify(status, null, 2);
+                    
+                    section.className = `section ${status.configured && !status.fallbackMode ? 'success' : 'warning'}`;
+                } else {
+                    // Try to load it
+                    const { default: BackendServiceV2 } = await import('./js/services/backend-service-v2.js');
+                    await BackendServiceV2.init();
+                    const status = BackendServiceV2.getStatus();
+                    
+                    diagnosticData.backendService = status;
+                    output.textContent = JSON.stringify(status, null, 2);
+                    
+                    section.className = `section ${status.configured && !status.fallbackMode ? 'success' : 'warning'}`;
+                }
+            } catch (error) {
+                output.textContent = `ERROR: ${error.message}`;
+                section.className = 'section error';
+                diagnosticData.backendService = { error: error.message };
+            }
+        }
+        
+        // Initialize diagnostic checks
+        window.addEventListener('load', async () => {
+            checkViteEnv();
+            await checkAWSConfig();
+            await checkBackendService();
+        });
+        
+        // Test functions for buttons
+        window.testEnvAccess = function() {
+            const output = document.getElementById('test-output');
+            try {
+                const env = import.meta.env;
+                const tests = {
+                    viteEnvKeys: Object.keys(env).filter(k => k.startsWith('VITE_')),
+                    hasEndpoint: !!env.VITE_API_ENDPOINT,
+                    hasApiKey: !!env.VITE_API_KEY,
+                    amplifyGlobal: !!window.__AMPLIFY_CONFIG__,
+                    mode: env.MODE
+                };
+                
+                output.textContent = JSON.stringify(tests, null, 2);
+            } catch (error) {
+                output.textContent = `ERROR: ${error.message}`;
+            }
+        };
+        
+        window.testBackendInit = async function() {
+            const output = document.getElementById('test-output');
+            try {
+                const { default: BackendServiceV2 } = await import('./js/services/backend-service-v2.js');
+                await BackendServiceV2.init();
+                
+                const result = {
+                    status: BackendServiceV2.getStatus(),
+                    fallbackMode: BackendServiceV2.isInFallbackMode(),
+                    timestamp: new Date().toISOString()
+                };
+                
+                output.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                output.textContent = `ERROR: ${error.message}`;
+            }
+        };
+        
+        window.testShareCreation = async function() {
+            const output = document.getElementById('test-output');
+            try {
+                const { default: BackendServiceV2 } = await import('./js/services/backend-service-v2.js');
+                await BackendServiceV2.init();
+                
+                const testData = {
+                    creatorName: 'Test User',
+                    creatorEmail: 'test@example.com',
+                    creatorMobile: '+60123456789',
+                    devices: [{ name: 'Test Device', power: 100, quantity: 1 }],
+                    calculations: { totalEnergy: '1 kWh' },
+                    title: 'Test Share',
+                    description: 'Test share creation'
+                };
+                
+                const result = await BackendServiceV2.createSharedCalculation(testData);
+                output.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                output.textContent = `ERROR: ${error.message}`;
+            }
+        };
+        
+        window.exportDiagnostic = function() {
+            const blob = new Blob([JSON.stringify(diagnosticData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'env-diagnostic.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+    </script>
+</body>
+</html> 

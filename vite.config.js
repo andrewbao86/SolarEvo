@@ -4,11 +4,12 @@ import legacy from '@vitejs/plugin-legacy'
 export default defineConfig({
   // Entry point for the application
   root: 'frontend',
-  build: {
+    build: {
     rollupOptions: {
       input: {
         main: 'frontend/index.html',
-        admin: 'frontend/admin.html'
+        admin: 'frontend/admin.html',
+        debug: 'frontend/debug-env.html'
       }
     },
     outDir: '../dist',
@@ -18,7 +19,7 @@ export default defineConfig({
     copyPublicDir: true
   },
   
-  // Static file handling  
+  // Static file handling - includes all environment files
   publicDir: 'frontend/public',
   
   // Plugins for legacy browser support and optimization

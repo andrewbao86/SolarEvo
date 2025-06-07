@@ -1,0 +1,6 @@
+{
+  "VITE_API_ENDPOINT": "https://placeholder-api-endpoint.appsync-api.region.amazonaws.com/graphql",
+  "VITE_API_KEY": "placeholder-api-key",
+  "AWS_REGION": "us-east-1",
+  "_note": "This file will be overwritten by Amplify build process with actual values"
+} 

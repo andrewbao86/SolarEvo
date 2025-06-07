@@ -23,6 +23,31 @@ frontend:
         - npm config set engine-strict false
         - npm install --no-engine-strict
         - echo "Frontend dependencies installed"
+        - echo "Setting up environment variables for runtime access..."
+        - |
+          # Create runtime config injection
+          cat > frontend/public/amplify-config.json << EOF
+          {
+            "VITE_API_ENDPOINT": "$VITE_API_ENDPOINT",
+            "VITE_API_KEY": "$VITE_API_KEY", 
+            "AWS_REGION": "$AWS_REGION"
+          }
+          EOF
+        - |
+          # Create global variable injection script
+          cat > frontend/public/env-inject.js << EOF
+          window.__AMPLIFY_CONFIG__ = {
+            VITE_API_ENDPOINT: "$VITE_API_ENDPOINT",
+            VITE_API_KEY: "$VITE_API_KEY",
+            AWS_REGION: "$AWS_REGION"
+          };
+          console.log('🔧 Amplify Environment Variables Injected:', {
+            endpoint: window.__AMPLIFY_CONFIG__.VITE_API_ENDPOINT ? 'SET' : 'MISSING',
+            apiKey: window.__AMPLIFY_CONFIG__.VITE_API_KEY ? 'SET' : 'MISSING',
+            region: window.__AMPLIFY_CONFIG__.AWS_REGION || 'us-east-1'
+          });
+          EOF
+        - echo "Environment variable injection scripts created"
     build:
       commands:
         - echo "Building frontend with Vite from root directory"
@@ -30,11 +55,19 @@ frontend:
         - echo "Checking for critical files before build"
         - ls -la frontend/config/
         - ls -la frontend/js/services/
+        - echo "Environment Variables Status:"
+        - echo "VITE_API_ENDPOINT=${VITE_API_ENDPOINT:0:50}..."
+        - echo "VITE_API_KEY=${VITE_API_KEY:0:20}..."
+        - echo "AWS_REGION=${AWS_REGION}"
         - npm run build
         - echo "Frontend build completed - checking artifacts"
         - ls -la dist/
         - test -f dist/index.html
-        - echo "Build validation complete"
+        - test -f dist/admin.html
+        - test -f dist/_redirects
+        - test -f dist/amplify-config.json
+        - test -f dist/env-inject.js
+        - echo "Build validation complete - all critical files present"
   artifacts:
     baseDirectory: dist
     files:
