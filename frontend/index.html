@@ -216,7 +216,7 @@
                     <i class="fas fa-globe"></i>
                 </a>
                 <!-- Admin access link -->
-                <a href="admin.html" class="social-icon admin-link" id="admin-link" title="Admin Dashboard">
+                <a href="admin.html" class="social-icon admin-link" id="admin-link" title="Admin Dashboard" onclick="navigateToAdmin(event)">
                     <i class="fas fa-cog"></i>
                 </a>
             </div>
@@ -430,6 +430,35 @@
         // CSV functionality is handled by the main application modules
         // This script just provides utility functions as fallbacks
         console.log('ℹ️ CSV functionality handled by main application modules (CsvHandler, main.js)');
+        
+        // Admin navigation function to ensure it works regardless of module issues
+        function navigateToAdmin(event) {
+            console.log('🔧 Admin link clicked - forcing navigation');
+            
+            // Prevent any default behavior or event bubbling that might interfere
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            try {
+                // Force navigation to admin page
+                console.log('🔧 Navigating to admin.html');
+                window.location.href = 'admin.html';
+            } catch (error) {
+                console.error('❌ Navigation error:', error);
+                // Multiple fallback attempts
+                try {
+                    document.location = 'admin.html';
+                } catch (fallbackError) {
+                    console.error('❌ Fallback navigation error:', fallbackError);
+                    // Last resort - open in new window
+                    window.open('admin.html', '_self');
+                }
+            }
+            
+            return false; // Ensure no default link behavior
+        }
     </script>
 </body>
 </html>

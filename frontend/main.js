@@ -1327,7 +1327,24 @@ function initializeApplication() {
                 }
                 
                 // Handle different versions
-                if (data.v === 3 && Array.isArray(data.d)) {
+                if (data.v === 4 && Array.isArray(data.d)) {
+                    // Version 4: New backend-compatible format
+                    const devices = data.d.map(device => {
+                        return {
+                            id: 'shared_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                            name: device.n,
+                            power: device.p,
+                            quantity: device.q || 1,
+                            operatingHours: device.o || [],
+                            batteryHours: device.b || [],
+                            critical: device.c === 1 || false
+                        };
+                    });
+                    
+                    console.log('📦 Decompressed v4 backend-compatible format:', devices.length, 'devices');
+                    return devices;
+                    
+                } else if (data.v === 3 && Array.isArray(data.d)) {
                     // Version 3: Ultra-compressed format with all optimizations
                     const devices = data.d.map(deviceArray => {
                         return {
@@ -2036,7 +2053,7 @@ function initializeApplication() {
             console.log('✅ Share modal created successfully');
         }
 
-        function generateShareableLink() {
+        async function generateShareableLink() {
             if (devices.length === 0) {
                 const message = 'Please add some devices before generating a shareable link.';
                 if (window.UIController) {
@@ -2047,100 +2064,97 @@ function initializeApplication() {
                 return;
             }
 
+            // Show loading state
+            if (window.UIController) {
+                UIController.showLoading(true, 'Creating share link...');
+            }
+
             try {
-                // Phase 3: Ultra-advanced compression with all optimizations
-                const compactData = {
-                    v: 3, // Version 3 for new ultra-compressed format
-                    d: devices.map(device => {
-                        const compressed = [
-                            compressDeviceName(device.name), // Phase 2: Device name dictionary
-                            compressPowerValue(device.power), // Phase 2: Power value dictionary
-                            device.quantity || 1,
-                            compressHourArray(device.operatingHours || []), // Phase 1: Hour array compression
-                            compressHourArray(device.batteryHours || []) // Phase 1: Hour array compression
-                        ];
+                // Get prospect information (without personal details for sharing)
+                const prospectData = {
+                    // Only include non-personal information for sharing
+                    projectName: prospectNameInput?.value || 'BESS Calculation',
+                    calculationDate: new Date().toISOString()
+                };
+
+                // Prepare data for backend storage
+                const shareData = {
+                    devices: devices.map(device => ({
+                        name: device.name,
+                        power: device.power,
+                        quantity: device.quantity || 1,
+                        operatingHours: device.operatingHours || [],
+                        batteryHours: device.batteryHours || [],
+                        critical: device.critical || false
+                    })),
+                    prospectData,
+                    version: 'v4-backend',
+                    timestamp: new Date().toISOString()
+                };
+
+                // Try backend storage first for short links
+                if (window.BackendServiceV2) {
+                    try {
+                        console.log('🔗 Creating short link via backend...');
+                        const result = await window.BackendServiceV2.createSharedCalculation(shareData);
                         
-                        // Add critical flag only if true (saves space)
-                        if (device.critical) {
-                            compressed.push(1);
+                        if (result.success && result.method === 'database') {
+                            console.log('✅ Short link created:', result.shareId);
+                            
+                            if (window.UIController) {
+                                UIController.showLoading(false);
+                                UIController.showStatus('✅ Short share link created!', 'success');
+                            }
+                            
+                            // Show the popup with the SHORT URL
+                            showSharePopup(result.url, 'database');
+                            return;
                         }
-                        
-                        return compressed;
-                    })
-                    // Phase 1: Remove timestamp for additional space savings
+                    } catch (backendError) {
+                        console.warn('⚠️ Backend sharing failed, using fallback:', backendError.message);
+                    }
+                }
+
+                // Fallback to URL encoding (but still shorter than before)
+                console.log('🔄 Using fallback URL encoding...');
+                
+                const compactData = {
+                    v: 4, // Version 4 for new format
+                    d: devices.map(device => ({
+                        n: device.name,
+                        p: device.power,
+                        q: device.quantity || 1,
+                        o: device.operatingHours || [],
+                        b: device.batteryHours || [],
+                        c: device.critical ? 1 : 0
+                    })),
+                    t: Math.floor(Date.now() / 86400000)
                 };
                 
-                // Convert to JSON
-                const jsonString = JSON.stringify(compactData);
-                
-                // Phase 3: Try LZ-String compression first
-                const { compressed: lzCompressed, usedLZ } = tryLZStringCompression(jsonString);
-                
-                // Create final data structure
-                const finalData = usedLZ ? { z: lzCompressed } : { j: lzCompressed };
-                const finalJson = JSON.stringify(finalData);
-                
-                // Apply base64url encoding
-                const encodedData = btoa(finalJson)
+                const encodedData = btoa(JSON.stringify(compactData))
                     .replace(/\+/g, '-')
                     .replace(/\//g, '_')
-                    .replace(/=/g, ''); // Remove padding for shorter URLs
+                    .replace(/=/g, '');
                 
                 const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodedData}`;
                 
-                console.log('🚀 Ultra-compression stats (main.js):', {
-                    original: JSON.stringify(devices).length,
-                    compressed: encodedData.length,
-                    reduction: Math.round((1 - encodedData.length / JSON.stringify(devices).length) * 100) + '%',
-                    usedLZ: usedLZ,
-                    version: 3
-                });
-
-                // Show the popup with the generated URL
-                showSharePopup(shareUrl);
+                console.log('📦 Fallback URL created (length:', encodedData.length, 'chars)');
+                
+                if (window.UIController) {
+                    UIController.showLoading(false);
+                    UIController.showStatus('🔗 Share link created (fallback mode)', 'info');
+                }
+                
+                showSharePopup(shareUrl, 'fallback');
                 
             } catch (error) {
-                console.error('❌ Error in ultra-compression, falling back to v2:', error);
+                console.error('❌ Error generating share link:', error);
                 
-                // Fallback to v2 compression
-                try {
-                    const compactData = {
-                        v: 2,
-                        d: devices.map(device => {
-                            const compressed = [
-                                device.name,
-                                device.power,
-                                device.quantity || 1,
-                                device.operatingHours || [],
-                                device.batteryHours || []
-                            ];
-                            
-                            if (device.critical) {
-                                compressed.push(1);
-                            }
-                            
-                            return compressed;
-                        }),
-                        t: Math.floor(Date.now() / 86400000)
-                    };
-                    
-                    const encodedData = btoa(JSON.stringify(compactData))
-                        .replace(/\+/g, '-')
-                        .replace(/\//g, '_')
-                        .replace(/=/g, '');
-                    
-                    const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodedData}`;
-                    
-                    console.log('📦 Fallback v2 compression used (main.js)');
-                    showSharePopup(shareUrl);
-                    
-                } catch (fallbackError) {
-                    console.error('❌ Fallback compression also failed:', fallbackError);
-                    if (window.UIController) {
-                        UIController.showStatus('❌ Failed to generate share link', 'error');
-                    } else {
-                        alert('Failed to generate share link');
-                    }
+                if (window.UIController) {
+                    UIController.showLoading(false);
+                    UIController.showStatus('❌ Failed to generate share link', 'error');
+                } else {
+                    alert('Failed to generate share link');
                 }
             }
         }

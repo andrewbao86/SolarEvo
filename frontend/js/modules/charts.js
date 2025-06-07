@@ -295,6 +295,17 @@ window.Charts = (function() {
         // Initialize all charts
         initialize: function() {
             try {
+                // If charts are already initialized, don't reinitialize
+                if (chartsInitialized) {
+                    console.log('📊 Charts already initialized, skipping...');
+                    return true;
+                }
+                
+                console.log('📊 Initializing charts...');
+                
+                // Destroy any existing charts before creating new ones
+                this.destroy();
+                
                 // ChartDataLabels plugin is now registered globally in HTML
                 
                 // Get chart contexts
@@ -306,23 +317,24 @@ window.Charts = (function() {
                 if (energyCtx) {
                     energyDistributionChart = createEnergyChart(energyCtx);
                     AppState.setChart('energy', energyDistributionChart);
-
+                    console.log('✅ Energy chart created');
                 }
                 
                 if (deviceCtx) {
                     deviceEnergyChart = createDeviceChart(deviceCtx);
                     AppState.setChart('device', deviceEnergyChart);
-
+                    console.log('✅ Device chart created');
                 }
                 
                 if (costCtx) {
                     costComparisonChart = createCostChart(costCtx);
                     AppState.setChart('cost', costComparisonChart);
-
+                    console.log('✅ Cost chart created');
                 }
                 
                 chartsInitialized = true;
                 AppState.setFlag('chartsInitialized', true);
+                console.log('📊 All charts initialized successfully');
                 
                 // Dispatch initialization complete event
                 const event = new CustomEvent('chartsInitialized', {
@@ -475,13 +487,27 @@ window.Charts = (function() {
         
         // Destroy all charts
         destroy: function() {
-            energyDistributionChart = destroyChart(energyDistributionChart);
-            deviceEnergyChart = destroyChart(deviceEnergyChart);
-            costComparisonChart = destroyChart(costComparisonChart);
+            console.log('🧹 Destroying existing charts...');
+            
+            if (energyDistributionChart) {
+                energyDistributionChart = destroyChart(energyDistributionChart);
+                console.log('🧹 Energy chart destroyed');
+            }
+            
+            if (deviceEnergyChart) {
+                deviceEnergyChart = destroyChart(deviceEnergyChart);
+                console.log('🧹 Device chart destroyed');
+            }
+            
+            if (costComparisonChart) {
+                costComparisonChart = destroyChart(costComparisonChart);
+                console.log('🧹 Cost chart destroyed');
+            }
             
             chartsInitialized = false;
             AppState.setFlag('chartsInitialized', false);
             
+            console.log('🧹 All charts destroyed');
         },
         
         // Resize charts (useful for responsive design)
@@ -498,19 +524,27 @@ window.Charts = (function() {
         getColors: getChartColors
     };
     
-    // Auto-initialize when DOM is ready
+    // Auto-initialize when DOM is ready (only once)
+    let autoInitialized = false;
+    
+    function doAutoInitialize() {
+        if (autoInitialized) {
+            console.log('📊 Auto-initialization already done, skipping...');
+            return;
+        }
+        autoInitialized = true;
+        console.log('📊 Starting auto-initialization...');
+        publicAPI.initialize();
+    }
+    
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             // Wait a bit for other modules to load
-            setTimeout(() => {
-                publicAPI.initialize();
-            }, 100);
+            setTimeout(doAutoInitialize, 100);
         });
     } else {
         // DOM is already ready
-        setTimeout(() => {
-            publicAPI.initialize();
-        }, 100);
+        setTimeout(doAutoInitialize, 100);
     }
     
     // Listen for device changes and update charts
