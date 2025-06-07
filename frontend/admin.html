@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SolarEvo BESS Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
         /* Admin-specific styles */
         .admin-container {
@@ -304,8 +304,8 @@
         <div id="auth-section" class="auth-section">
             <h2>🔋 SolarEvo Admin Access</h2>
             <p>Enter your credentials to access the dashboard</p>
-            <input type="text" id="admin-username" class="auth-input" placeholder="Username: admin">
-            <input type="password" id="admin-password" class="auth-input" placeholder="Password: solarevo2024">
+            <input type="text" id="admin-username" class="auth-input" placeholder="Username" style="border: 2px solid #007bff; background-color: #f8f9fa; font-size: 16px; padding: 12px;">
+            <input type="password" id="admin-password" class="auth-input" placeholder="Password" style="border: 2px solid #007bff; background-color: #f8f9fa; font-size: 16px; padding: 12px;">
             <button onclick="authenticate()" class="auth-button">Login</button>
             <div id="auth-error" style="color: red; margin-top: 10px; display: none;"></div>
         </div>
@@ -390,12 +390,12 @@
         // Import AWS Amplify components
         import { Amplify } from 'aws-amplify';
         import { generateClient } from 'aws-amplify/api';
-        import awsExports from './src/aws-exports.js';
+        import awsExports from './js/config/aws-exports.js';
         import { 
             listSharedCalculations,
             getSharedCalculation,
             updateSharedCalculation
-        } from './src/graphql/operations.js';
+        } from '../backend/api/operations.js';
 
         // Additional GraphQL operations for admin functions
         const deleteSharedCalculationMutation = /* GraphQL */ `
@@ -416,7 +416,6 @@
                 Amplify.configure(awsExports);
                 client = generateClient();
                 isAmplifyConfigured = true;
-                console.log('✅ Admin Dashboard: AWS Amplify configured successfully');
                 updateConnectionStatus('connected');
             } else {
                 console.warn('⚠️ Admin Dashboard: AWS Amplify not configured');
@@ -493,7 +492,6 @@
         // Data loading from real database
         async function loadRecords() {
             try {
-                console.log('🔄 Loading records from database...');
                 updateConnectionStatus('loading');
                 
                 // Show loading in table
@@ -507,7 +505,6 @@
                     });
                     
                     const calculationIds = listResult.data.listSharedCalculations.items.map(item => item.id);
-                    console.log(`📊 Found ${calculationIds.length} calculations in database`);
                     
                     // Now fetch full details for each calculation
                     const detailedRecords = await Promise.all(
@@ -537,7 +534,6 @@
                             };
                         });
                     
-                    console.log(`✅ Successfully loaded ${allRecords.length} detailed records`);
                     updateConnectionStatus('connected');
                     
                 } else {
@@ -786,7 +782,6 @@
                             input: { id } 
                         }
                     });
-                    console.log(`✅ Deleted record ${id} from database`);
                 } else {
                     console.warn('⚠️ Backend not configured, removing from local list only');
                 }
@@ -832,7 +827,6 @@
                             console.warn(`⚠️ Failed to delete record ${record.id}:`, error);
                         }
                     }
-                    console.log(`✅ Deleted ${deletedCount} expired records from database`);
                 } else {
                     deletedCount = expiredRecords.length;
                     console.warn('⚠️ Backend not configured, removing from local list only');

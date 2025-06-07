@@ -1,0 +1,3 @@
+name,power,quantity,operatinghours,batteryhours,critical
+Air Conditioner,2000,2,08:00 - 18:00,18:00 - 22:00,false
+Refrigerator,150,1,00:00 - 24:00,18:00 - 08:00,true

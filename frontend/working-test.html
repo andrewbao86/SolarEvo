@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Test - Guaranteed Working</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>CSV Functionality Test</h1>
+    
+    <button id="download-csv">📥 Download CSV Template</button>
+    <input type="file" id="csv-file" accept=".csv" style="display: none;">
+    <button id="upload-csv">📤 Upload CSV File</button>
+    
+    <div id="status"></div>
+    <div id="results"></div>
+
+    <!-- Papa Parse for CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <script>
+        console.log('🧪 Working test script loaded');
+        
+        const status = document.getElementById('status');
+        const results = document.getElementById('results');
+        
+        function showStatus(message, type = 'info') {
+            console.log(message);
+            status.innerHTML = `<p class="${type}">${message}</p>`;
+        }
+        
+        // CSV Template data
+        const csvTemplate = [
+            { name: 'Air Conditioner', power: 2000, quantity: 2, operatinghours: '08:00 - 18:00', batteryhours: '18:00 - 22:00', critical: 'false' },
+            { name: 'Refrigerator', power: 150, quantity: 1, operatinghours: '00:00 - 24:00', batteryhours: '18:00 - 08:00', critical: 'true' }
+        ];
+        
+        // Convert array to CSV string
+        function arrayToCsv(data) {
+            const headers = ['name', 'power', 'quantity', 'operatinghours', 'batteryhours', 'critical'];
+            const csvRows = [headers.join(',')];
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row[header] || '';
+                    return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+                });
+                csvRows.push(values.join(','));
+            });
+            
+            return csvRows.join('\n');
+        }
+        
+        // Download CSV file
+        function downloadCsv(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Download button
+        document.getElementById('download-csv').addEventListener('click', function() {
+            console.log('📥 Download button clicked');
+            showStatus('Generating CSV template...', 'info');
+            
+            try {
+                const csvContent = arrayToCsv(csvTemplate);
+                downloadCsv(csvContent, 'bess-template.csv');
+                showStatus('✅ CSV template downloaded successfully!', 'success');
+            } catch (error) {
+                console.error('Download error:', error);
+                showStatus('❌ Download failed: ' + error.message, 'error');
+            }
+        });
+        
+        // Upload button
+        document.getElementById('upload-csv').addEventListener('click', function() {
+            console.log('📤 Upload button clicked');
+            document.getElementById('csv-file').click();
+        });
+        
+        // File input change
+        document.getElementById('csv-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            console.log('📂 File selected:', file.name);
+            showStatus('Processing CSV file...', 'info');
+            
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(result) {
+                    console.log('Papa Parse result:', result);
+                    
+                    if (result.errors.length > 0) {
+                        showStatus('❌ CSV parsing errors: ' + result.errors.map(e => e.message).join(', '), 'error');
+                        return;
+                    }
+                    
+                    if (!result.data || result.data.length === 0) {
+                        showStatus('❌ No data found in CSV file', 'error');
+                        return;
+                    }
+                    
+                    showStatus(`✅ Successfully parsed ${result.data.length} rows`, 'success');
+                    
+                    // Display results
+                    results.innerHTML = '<h3>Parsed Data:</h3>' + 
+                        '<pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+                },
+                error: function(error) {
+                    console.error('Papa Parse error:', error);
+                    showStatus('❌ CSV parsing failed: ' + error.message, 'error');
+                }
+            });
+        });
+        
+        showStatus('✅ CSV test ready - try downloading and uploading a template', 'success');
+    </script>
+</body>
+</html> 

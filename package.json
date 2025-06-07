@@ -8,7 +8,8 @@
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint .",
+    "clean": "rimraf dist",
+    "lint": "eslint frontend/js --ext .js",
     "backend:deploy": "npx ampx sandbox --deploy",
     "backend:delete": "npx ampx sandbox --delete"
   },

@@ -3,13 +3,14 @@ import legacy from '@vitejs/plugin-legacy'
 
 export default defineConfig({
   // Entry point for the application
+  root: 'frontend',
   build: {
     rollupOptions: {
       input: {
-        main: 'index.html'
+        main: 'frontend/index.html'
       }
     },
-    outDir: 'dist',
+    outDir: '../dist',
     assetsDir: 'assets',
     sourcemap: true
   },
@@ -34,7 +35,8 @@ export default defineConfig({
   
   // Optimize dependencies
   optimizeDeps: {
-    include: ['aws-amplify', '@aws-amplify/ui-react']
+    include: ['aws-amplify', '@aws-amplify/ui-react'],
+    exclude: ['app.js', 'public/app.js']
   },
   
   // Handle CommonJS modules

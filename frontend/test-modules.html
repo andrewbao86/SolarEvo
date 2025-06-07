@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Module Loading Test</title>
+</head>
+<body>
+    <h1>Module Loading Test</h1>
+    <div id="results"></div>
+
+    <!-- Load modules first -->
+    <script src="js/modules/app-state.js"></script>
+    <script src="js/modules/csv-handler.js"></script>
+    
+    <!-- Test script loaded last -->
+    <script>
+        console.log('🧪 Test script running');
+        
+        const results = document.getElementById('results');
+        const moduleTests = [];
+        
+        // Check if modules are available
+        if (window.AppState) {
+            console.log('✅ AppState module loaded');
+            moduleTests.push('✅ AppState: Available');
+        } else {
+            console.log('❌ AppState module NOT loaded');
+            moduleTests.push('❌ AppState: Missing');
+        }
+        
+        if (window.CsvHandler) {
+            console.log('✅ CsvHandler module loaded');
+            moduleTests.push('✅ CsvHandler: Available');
+        } else {
+            console.log('❌ CsvHandler module NOT loaded');
+            moduleTests.push('❌ CsvHandler: Missing');
+        }
+        
+        // Display results
+        results.innerHTML = '<h2>Module Test Results:</h2>' + 
+                           moduleTests.map(test => `<p>${test}</p>`).join('');
+    </script>
+</body>
+</html> 
