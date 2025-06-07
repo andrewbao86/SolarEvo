@@ -1,0 +1,11 @@
+# Amplify Redirects Configuration
+# Handle admin dashboard routing
+/admin /admin.html 200
+/admin.html /admin.html 200
+
+# Handle shared link routing
+/?share=* /index.html 200
+/?s=* /index.html 200
+
+# Fallback for SPA behavior - must be last
+/* /index.html 200 

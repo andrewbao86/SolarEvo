@@ -7,14 +7,19 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: 'frontend/index.html'
+        main: 'frontend/index.html',
+        admin: 'frontend/admin.html'
       }
     },
     outDir: '../dist',
     emptyOutDir: true,
     assetsDir: 'assets',
-    sourcemap: true
+    sourcemap: true,
+    copyPublicDir: true
   },
+  
+  // Static file handling  
+  publicDir: 'frontend/public',
   
   // Plugins for legacy browser support and optimization
   plugins: [
