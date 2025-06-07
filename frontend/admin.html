@@ -347,10 +347,12 @@
                 </div>
             </div>
 
-            <!-- Actions -->
+            <!-- Enhanced Actions -->
             <div class="actions-bar">
                 <button onclick="exportToCSV()" class="action-btn primary">📥 Export CSV</button>
                 <button onclick="deleteExpired()" class="action-btn" style="background: #dc3545;">🗑️ Delete Expired</button>
+                <button onclick="testConnection()" class="action-btn" style="background: #17a2b8;">🔧 Test Connection</button>
+                <button onclick="debugDatabase()" class="action-btn" style="background: #6c757d;">🐛 Debug Database</button>
             </div>
 
             <!-- Data Table -->
@@ -370,13 +372,14 @@
                                 <th>🔋 Devices</th>
                                 <th>⚡ Total Energy</th>
                                 <th>🔋 Battery Capacity</th>
+                                <th>🔗 Share Link</th>
                                 <th onclick="sortTable('isActive')">📊 Status</th>
                                 <th>⚙️ Actions</th>
                             </tr>
                         </thead>
                         <tbody id="records-tbody">
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 40px;">Loading records...</td>
+                                <td colspan="10" style="text-align: center; padding: 40px;">Loading records...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -397,12 +400,50 @@
             updateSharedCalculation
         } from '../backend/api/operations.js';
 
-        // Additional GraphQL operations for admin functions
-        const deleteSharedCalculationMutation = /* GraphQL */ `
-            mutation DeleteSharedCalculation($input: DeleteSharedCalculationInput!) {
-                deleteSharedCalculation(input: $input) {
+        // Enhanced GraphQL operations for admin functions  
+        const adminListSharedCalculations = /* GraphQL */ `
+            query AdminListSharedCalculations($limit: Int, $nextToken: String, $filter: ModelSharedCalculationFilterInput) {
+                listSharedCalculations(limit: $limit, nextToken: $nextToken, filter: $filter) {
+                    items {
+                        id
+                        shareId
+                        createdAt
+                        expiresAt
+                        creatorName
+                        creatorEmail
+                        creatorMobile
+                        devices
+                        calculations
+                        isActive
+                        isPublic
+                        title
+                        description
+                        userId
+                    }
+                    nextToken
+                }
+            }
+        `;
+
+        const deactivateSharedCalculation = /* GraphQL */ `
+            mutation DeactivateSharedCalculation($id: ID!) {
+                updateSharedCalculation(input: {
+                    id: $id
+                    isActive: false
+                }) {
                     id
-                    __typename
+                    isActive
+                    shareId
+                }
+            }
+        `;
+
+        const bulkDeactivateSharedCalculations = /* GraphQL */ `
+            mutation BulkDeactivateSharedCalculations($ids: [ID!]!) {
+                bulkUpdateSharedCalculations(inputs: $ids) {
+                    id
+                    isActive
+                    shareId
                 }
             }
         `;
@@ -489,52 +530,81 @@
             document.getElementById('admin-password').value = '';
         }
 
-        // Data loading from real database
+        // Enhanced data loading from database with efficient single query
         async function loadRecords() {
             try {
                 updateConnectionStatus('loading');
                 
-                // Show loading in table
+                // Show loading in table  
                 const tbody = document.getElementById('records-tbody');
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">🔄 Loading records from database...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">🔄 Loading records from database...</td></tr>';
                 
                 if (isAmplifyConfigured && client) {
-                    // First, get the list of all calculations with basic info
-                    const listResult = await client.graphql({ 
-                        query: listSharedCalculations 
+                    console.log('🔍 Loading records from database with admin query...');
+                    
+                    // Use efficient admin query to get all data in one call
+                    const result = await client.graphql({ 
+                        query: adminListSharedCalculations,
+                        variables: { limit: 1000 } // Get up to 1000 records
                     });
                     
-                    const calculationIds = listResult.data.listSharedCalculations.items.map(item => item.id);
+                    console.log('✅ Database query successful:', result.data.listSharedCalculations.items.length, 'records');
                     
-                    // Now fetch full details for each calculation
-                    const detailedRecords = await Promise.all(
-                        calculationIds.map(async (id) => {
-                            try {
-                                const detailResult = await client.graphql({
-                                    query: getSharedCalculation,
-                                    variables: { id }
-                                });
-                                return detailResult.data.getSharedCalculation;
-                            } catch (error) {
-                                console.warn(`⚠️ Failed to load details for record ${id}:`, error);
-                                return null;
-                            }
-                        })
-                    );
-                    
-                    // Filter out any null results and update expiry status
-                    allRecords = detailedRecords
-                        .filter(record => record !== null)
+                    // Process records with enhanced data
+                    allRecords = result.data.listSharedCalculations.items
                         .map(record => {
-                            // Update isActive based on expiry date
+                            // Calculate expiry status
                             const isExpired = new Date() > new Date(record.expiresAt);
+                            
+                            // Generate share URL
+                            const shareUrl = record.shareId ? 
+                                `${window.location.origin}/index.html?share=${record.shareId}` : 
+                                `${window.location.origin}/index.html?id=${record.id}`;
+                            
+                            // Ensure devices is an array
+                            let devices = [];
+                            try {
+                                if (typeof record.devices === 'string') {
+                                    devices = JSON.parse(record.devices);
+                                } else if (Array.isArray(record.devices)) {
+                                    devices = record.devices;
+                                }
+                            } catch (error) {
+                                console.warn('⚠️ Failed to parse devices for record', record.id, error);
+                                devices = [];
+                            }
+                            
+                            // Ensure calculations is an object
+                            let calculations = {
+                                totalEnergy: 'N/A',
+                                batteryCapacity: 'N/A',
+                                recommendedSize: 'N/A'
+                            };
+                            try {
+                                if (typeof record.calculations === 'string') {
+                                    calculations = { ...calculations, ...JSON.parse(record.calculations) };
+                                } else if (record.calculations && typeof record.calculations === 'object') {
+                                    calculations = { ...calculations, ...record.calculations };
+                                }
+                            } catch (error) {
+                                console.warn('⚠️ Failed to parse calculations for record', record.id, error);
+                            }
+                            
                             return {
                                 ...record,
-                                isActive: !isExpired
+                                isActive: record.isActive && !isExpired, // Respect both database flag and expiry
+                                shareUrl: shareUrl,
+                                devices: devices,
+                                calculations: calculations,
+                                deviceCount: devices.length,
+                                title: record.title || `${record.creatorName}'s BESS Calculation`,
+                                description: record.description || `Calculation with ${devices.length} devices`
                             };
-                        });
+                        })
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by newest first
                     
                     updateConnectionStatus('connected');
+                    console.log('✅ Processed', allRecords.length, 'records successfully');
                     
                 } else {
                     console.warn('⚠️ Backend not configured, using sample data');
@@ -553,21 +623,36 @@
                 const tbody = document.getElementById('records-tbody');
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px; color: #e74c3c;">
+                        <td colspan="10" style="text-align: center; padding: 40px; color: #e74c3c;">
                             <div>
                                 <h3>⚠️ Database Connection Error</h3>
-                                <p>Failed to load records from database: ${error.message}</p>
-                                <button onclick="loadRecords()" style="margin-top: 10px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                    🔄 Retry
-                                </button>
+                                <p style="margin: 10px 0; font-size: 14px; color: #666;">
+                                    Failed to load records: ${error.message}
+                                </p>
+                                <div style="margin-top: 15px;">
+                                    <button onclick="loadRecords()" style="margin-right: 10px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                        🔄 Retry Database
+                                    </button>
+                                    <button onclick="loadSampleData()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                        📊 Load Sample Data
+                                    </button>
+                                </div>
                             </div>
                         </td>
                     </tr>
                 `;
                 
-                // Also update stats to show error state
-                document.getElementById('table-stats').textContent = 'Error loading data';
+                document.getElementById('table-stats').textContent = 'Error loading data - Check connection';
             }
+        }
+        
+        // Function to load sample data manually
+        function loadSampleData() {
+            console.log('📊 Loading sample data for testing...');
+            allRecords = generateSampleData();
+            updateConnectionStatus('not-configured');
+            applyFilters();
+            updateStats();
         }
 
         // Generate sample data
@@ -660,12 +745,12 @@
             });
         }
 
-        // Rendering
+        // Enhanced rendering with share link management
         function renderTable() {
             const tbody = document.getElementById('records-tbody');
 
             if (filteredRecords.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">No records found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">No records found</td></tr>';
                 return;
             }
 
@@ -685,6 +770,10 @@
                 // Format date
                 const createdDate = record.createdAt ? new Date(record.createdAt).toLocaleDateString() : 'N/A';
                 
+                // Format share link
+                const shareUrl = record.shareUrl || '#';
+                const shareId = record.shareId || 'N/A';
+                
                 return `
                     <tr>
                         <td>${createdDate}</td>
@@ -694,15 +783,83 @@
                         <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${devicesDisplay}">${devicesDisplay}</td>
                         <td>${totalEnergy}</td>
                         <td>${batteryCapacity}</td>
+                        <td style="min-width: 200px;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span style="font-family: monospace; font-size: 12px; color: #666; min-width: 60px;">${shareId}</span>
+                                <input readonly value="${shareUrl}" style="flex: 1; padding: 2px 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px; background: #f8f9fa; min-width: 100px;">
+                                <button onclick="copyShareLink('${shareUrl}')" title="Copy share link" style="padding: 2px 6px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">📋</button>
+                            </div>
+                        </td>
                         <td><span class="status-badge ${record.isActive ? 'status-active' : 'status-expired'}">${record.isActive ? 'Active' : 'Expired'}</span></td>
                         <td>
-                            <button class="row-btn view" onclick="viewRecord('${record.id}')">👁️</button>
-                            <button class="row-btn download" onclick="downloadRecord('${record.id}')">📥</button>
-                            <button class="row-btn delete" onclick="deleteRecord('${record.id}')" style="background: #dc3545; color: white;">🗑️</button>
+                            <div style="display: flex; gap: 2px; flex-wrap: wrap;">
+                                <button class="row-btn view" onclick="viewRecord('${record.id}')" title="View calculation">👁️</button>
+                                <button class="row-btn download" onclick="downloadRecord('${record.id}')" title="Download JSON">📥</button>
+                                <button class="row-btn delete" onclick="deactivateRecord('${record.id}')" title="Deactivate" style="background: #dc3545; color: white;">🗑️</button>
+                            </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+        
+        // Copy share link to clipboard
+        function copyShareLink(url) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showTemporaryMessage('🔗 Share link copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Failed to copy link:', err);
+                    fallbackCopyToClipboard(url);
+                });
+            } else {
+                fallbackCopyToClipboard(url);
+            }
+        }
+        
+        // Fallback copy method
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showTemporaryMessage('🔗 Share link copied to clipboard!', 'success');
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showTemporaryMessage('❌ Failed to copy link', 'error');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // Show temporary status message
+        function showTemporaryMessage(message, type = 'info') {
+            const statusElement = document.getElementById('connection-status');
+            const originalContent = statusElement.textContent;
+            const originalStyle = statusElement.style.cssText;
+            
+            // Show message
+            statusElement.textContent = message;
+            if (type === 'success') {
+                statusElement.style.background = '#d4edda';
+                statusElement.style.color = '#155724';
+            } else if (type === 'error') {
+                statusElement.style.background = '#f8d7da';
+                statusElement.style.color = '#721c24';
+            }
+            
+            // Restore original after 2 seconds
+            setTimeout(() => {
+                statusElement.textContent = originalContent;
+                statusElement.style.cssText = originalStyle;
+            }, 2000);
         }
 
         function updateStats() {
@@ -845,16 +1002,277 @@
             }
         }
 
+        // Enhanced admin functions with deactivation instead of deletion
+        async function deactivateRecord(recordId) {
+            if (!confirm('Are you sure you want to deactivate this record? It will no longer be accessible via share links.')) {
+                return;
+            }
+            
+            try {
+                // Check if backend is available for actual deactivation
+                if (isAmplifyConfigured && client) {
+                    // Deactivate in database instead of deleting
+                    const result = await client.graphql({
+                        query: deactivateSharedCalculation,
+                        variables: {
+                            id: recordId
+                        }
+                    });
+                    
+                    console.log(`✅ Successfully deactivated record ${recordId}:`, result.data.updateSharedCalculation);
+                    
+                    // Update local record
+                    const recordIndex = allRecords.findIndex(r => r.id === recordId);
+                    if (recordIndex !== -1) {
+                        allRecords[recordIndex].isActive = false;
+                    }
+                    
+                } else {
+                    console.log(`⚠️ Backend not available, simulating deactivation of record ${recordId}`);
+                    
+                    // Update local record for simulation
+                    const recordIndex = allRecords.findIndex(r => r.id === recordId);
+                    if (recordIndex !== -1) {
+                        allRecords[recordIndex].isActive = false;
+                    }
+                }
+                
+                applyFilters();
+                updateStats();
+                
+                showTemporaryMessage('✅ Record deactivated successfully!', 'success');
+                
+            } catch (error) {
+                console.error('❌ Error deactivating record:', error);
+                showTemporaryMessage(`❌ Failed to deactivate: ${error.message}`, 'error');
+            }
+        }
+        
+        // Bulk deactivation function
+        async function bulkDeactivateRecords() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) {
+                alert('Please select records to deactivate');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to deactivate ${checkboxes.length} selected records?`)) {
+                return;
+            }
+            
+            const recordIds = Array.from(checkboxes).map(cb => cb.value);
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (const recordId of recordIds) {
+                try {
+                    if (isAmplifyConfigured && client) {
+                        await client.graphql({
+                            query: deactivateSharedCalculation,
+                            variables: { id: recordId }
+                        });
+                    }
+                    
+                    // Update local record
+                    const recordIndex = allRecords.findIndex(r => r.id === recordId);
+                    if (recordIndex !== -1) {
+                        allRecords[recordIndex].isActive = false;
+                    }
+                    
+                    successCount++;
+                } catch (error) {
+                    console.error(`Failed to deactivate record ${recordId}:`, error);
+                    errorCount++;
+                }
+            }
+            
+            applyFilters();
+            updateStats();
+            
+            if (errorCount === 0) {
+                showTemporaryMessage(`✅ Successfully deactivated ${successCount} records`, 'success');
+            } else {
+                showTemporaryMessage(`⚠️ Deactivated ${successCount} records, ${errorCount} failed`, 'error');
+            }
+        }
+
+        // Enhanced error handling and debugging functions
+        async function testConnection() {
+            console.log('🔧 Testing database connection...');
+            updateConnectionStatus('loading');
+            
+            try {
+                if (!isAmplifyConfigured || !client) {
+                    throw new Error('AWS Amplify not configured');
+                }
+                
+                // Test basic connection with simple query
+                const testResult = await client.graphql({
+                    query: adminListSharedCalculations,
+                    variables: { limit: 1 }
+                });
+                
+                console.log('✅ Connection test successful:', testResult);
+                updateConnectionStatus('connected');
+                showTemporaryMessage('✅ Database connection successful!', 'success');
+                
+                // Show basic info in alert
+                const itemCount = testResult.data.listSharedCalculations.items.length;
+                alert(`✅ Connection Test Successful!\n\nDatabase Status: Connected\nTest Query: Retrieved ${itemCount} sample record(s)\nEndpoint: ${awsExports.aws_appsync_graphqlEndpoint}`);
+                
+            } catch (error) {
+                console.error('❌ Connection test failed:', error);
+                updateConnectionStatus('error');
+                showTemporaryMessage('❌ Database connection failed!', 'error');
+                
+                alert(`❌ Connection Test Failed!\n\nError: ${error.message}\n\nTroubleshooting:\n- Check AWS configuration\n- Verify API endpoint\n- Check network connectivity\n- Review browser console logs`);
+            }
+        }
+        
+        async function debugDatabase() {
+            console.log('🐛 Starting database debug session...');
+            
+            const debugInfo = {
+                timestamp: new Date().toISOString(),
+                amplifyConfigured: isAmplifyConfigured,
+                clientAvailable: !!client,
+                recordsCount: allRecords.length,
+                filteredCount: filteredRecords.length,
+                awsConfig: {
+                    region: awsExports.aws_project_region || 'Not configured',
+                    endpoint: awsExports.aws_appsync_graphqlEndpoint || 'Not configured',
+                    apiKey: awsExports.aws_appsync_apiKey ? '***configured***' : 'Not configured',
+                    authenticationType: awsExports.aws_appsync_authenticationType || 'Not configured'
+                },
+                browserInfo: {
+                    userAgent: navigator.userAgent,
+                    url: window.location.href,
+                    secureContext: window.isSecureContext
+                }
+            };
+            
+            console.log('🐛 Debug Information:', debugInfo);
+            
+            // Create downloadable debug report
+            const debugReport = `
+# BESS Calculator Admin Debug Report
+Generated: ${debugInfo.timestamp}
+
+## Configuration Status
+- Amplify Configured: ${debugInfo.amplifyConfigured}
+- Client Available: ${debugInfo.clientAvailable}
+- Records Loaded: ${debugInfo.recordsCount}
+- Filtered Records: ${debugInfo.filteredCount}
+
+## AWS Configuration
+- Region: ${debugInfo.awsConfig.region}
+- GraphQL Endpoint: ${debugInfo.awsConfig.endpoint}
+- API Key: ${debugInfo.awsConfig.apiKey}
+- Auth Type: ${debugInfo.awsConfig.authenticationType}
+
+## Browser Information
+- User Agent: ${debugInfo.browserInfo.userAgent}
+- Current URL: ${debugInfo.browserInfo.url}
+- Secure Context: ${debugInfo.browserInfo.secureContext}
+
+## Recent Console Logs
+${console.history || 'Console history not available'}
+
+## Recommendations
+${getDebugRecommendations(debugInfo)}
+            `.trim();
+            
+            // Show debug info in alert
+            alert(`🐛 Debug Information Generated!\n\nKey Status:\n- Amplify: ${debugInfo.amplifyConfigured ? '✅' : '❌'}\n- Client: ${debugInfo.clientAvailable ? '✅' : '❌'}\n- Records: ${debugInfo.recordsCount}\n\nCheck browser console for detailed information.\nDebug report will be downloaded.`);
+            
+            // Download debug report
+            const blob = new Blob([debugReport], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `bess_admin_debug_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function getDebugRecommendations(debugInfo) {
+            const recommendations = [];
+            
+            if (!debugInfo.amplifyConfigured) {
+                recommendations.push('- Configure AWS Amplify in aws-exports.js');
+            }
+            
+            if (!debugInfo.clientAvailable) {
+                recommendations.push('- Check GraphQL client initialization');
+            }
+            
+            if (debugInfo.awsConfig.endpoint === 'Not configured') {
+                recommendations.push('- Set GraphQL endpoint in configuration');
+            }
+            
+            if (debugInfo.awsConfig.apiKey === 'Not configured') {
+                recommendations.push('- Configure API key for authentication');
+            }
+            
+            if (debugInfo.recordsCount === 0) {
+                recommendations.push('- Check database for existing records');
+                recommendations.push('- Verify query permissions');
+            }
+            
+            if (!debugInfo.browserInfo.secureContext) {
+                recommendations.push('- Use HTTPS for secure context (clipboard access)');
+            }
+            
+            return recommendations.length > 0 ? recommendations.join('\n') : '- No specific issues detected';
+        }
+        
+        // Enhanced error logging
+        function logError(context, error, additionalInfo = {}) {
+            const errorLog = {
+                timestamp: new Date().toISOString(),
+                context: context,
+                error: {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name
+                },
+                additionalInfo: additionalInfo,
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            };
+            
+            console.error(`❌ ${context}:`, errorLog);
+            
+            // Store in sessionStorage for debugging
+            try {
+                const existingLogs = JSON.parse(sessionStorage.getItem('adminErrorLogs') || '[]');
+                existingLogs.push(errorLog);
+                // Keep only last 50 errors
+                if (existingLogs.length > 50) {
+                    existingLogs.splice(0, existingLogs.length - 50);
+                }
+                sessionStorage.setItem('adminErrorLogs', JSON.stringify(existingLogs));
+            } catch (storageError) {
+                console.warn('Failed to store error log:', storageError);
+            }
+        }
+
         // Make functions global for onclick handlers
         window.authenticate = authenticate;
         window.logout = logout;
         window.loadRecords = loadRecords;
+        window.loadSampleData = loadSampleData;
         window.refreshData = refreshData;
         window.viewRecord = viewRecord;
         window.downloadRecord = downloadRecord;
         window.deleteRecord = deleteRecord;
+        window.deactivateRecord = deactivateRecord;
+        window.bulkDeactivateRecords = bulkDeactivateRecords;
+        window.copyShareLink = copyShareLink;
         window.exportToCSV = exportToCSV;
         window.deleteExpired = deleteExpired;
+        window.testConnection = testConnection;
+        window.debugDatabase = debugDatabase;
         window.applyFilters = applyFilters;
         window.sortTable = sortTable;
         window.updateConnectionStatus = updateConnectionStatus;

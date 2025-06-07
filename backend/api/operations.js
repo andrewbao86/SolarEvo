@@ -126,6 +126,10 @@ export const listSharedCalculations = /* GraphQL */ `
         createdAt
         expiresAt
         creatorName
+        creatorEmail
+        creatorMobile
+        devices
+        calculations
         isActive
         isPublic
         title
