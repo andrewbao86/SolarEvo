@@ -33,7 +33,8 @@ frontend:
         - npm run build
         - echo "Frontend build completed - checking artifacts"
         - ls -la dist/
-        - test -f dist/index.html && echo "✅ Build successful: index.html exists" || (echo "❌ Build failed: no index.html" && exit 1)
+        - test -f dist/index.html && echo "✅ Build successful: index.html exists" || echo "❌ Build failed: no index.html"
+        - test -f dist/index.html || exit 1
   artifacts:
     baseDirectory: dist
     files:
