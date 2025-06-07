@@ -27,14 +27,14 @@ frontend:
       commands:
         - echo "Building frontend with Vite from root directory"
         - pwd
-        - echo "Checking for critical files before build..."
-        - test -f frontend/config/aws-exports.js && echo "✅ aws-exports.js found" || echo "❌ aws-exports.js missing"
-        - test -f frontend/js/services/operations.js && echo "✅ operations.js found" || echo "❌ operations.js missing"
+        - echo "Checking for critical files before build"
+        - ls -la frontend/config/
+        - ls -la frontend/js/services/
         - npm run build
         - echo "Frontend build completed - checking artifacts"
         - ls -la dist/
-        - test -f dist/index.html && echo "✅ Build successful: index.html exists" || echo "❌ Build failed: no index.html"
-        - test -f dist/index.html || exit 1
+        - test -f dist/index.html
+        - echo "Build validation complete"
   artifacts:
     baseDirectory: dist
     files:
