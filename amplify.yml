@@ -1,11 +1,15 @@
 version: 1
 backend:
   phases:
-    build:
+    preBuild:
       commands:
         - cd backend/amplify
         - npm ci
-        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID
+    build:
+      commands:
+        - echo "Building backend with TypeScript compilation"
+        - npm run build
+        - echo "Backend build completed"
 frontend:
   phases:
     preBuild:

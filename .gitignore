@@ -31,9 +31,17 @@ out/
 ehthumbs.db
 Thumbs.db
 
-# Amplify
-amplify/
+# Old Amplify Gen 1 (exclude only root amplify directory, not backend/amplify)
+/amplify/
 .amplify/
+
+# Amplify Gen 2 specific exclusions
+backend/amplify/node_modules/
+backend/amplify/dist/
+backend/amplify/.config/local-*
+backend/amplify/logs/
+backend/amplify/#current-cloud-backend/
+backend/amplify/.secret-*
 
 #amplify-do-not-edit-begin
 amplify/\#current-cloud-backend
@@ -56,11 +64,7 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 
-
-
-
 .aws/
-
 
 #amplify-do-not-edit-end
 
