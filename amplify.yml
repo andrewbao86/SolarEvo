@@ -15,11 +15,13 @@ frontend:
     preBuild:
       commands:
         - npm install
-        - echo "Frontend build starting..."
+        - echo "Frontend dependencies installed"
     build:
       commands:
-        - echo "Building with Gen 2 backend integration"
+        - echo "Building frontend with Vite"
         - npm run build
+        - echo "Frontend build completed"
+        - ls -la dist/
   artifacts:
     baseDirectory: dist
     files:
