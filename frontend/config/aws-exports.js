@@ -5,13 +5,55 @@
 // Safe environment variable access with comprehensive fallbacks
 const getEnvVar = (key, fallback) => {
   try {
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env[key] || fallback;
+    // In Vite, environment variables are available through import.meta.env
+    // Use string check to avoid syntax errors in different environments
+    if (typeof globalThis !== 'undefined' && globalThis.import && globalThis.import.meta && globalThis.import.meta.env) {
+      const value = globalThis.import.meta.env[key];
+      if (value !== undefined && value !== null && value !== '') {
+        return value;
+      }
     }
+    
+    // Direct access to import.meta.env (works in modern ES modules)
+    try {
+      const metaEnv = import.meta.env;
+      if (metaEnv && metaEnv[key] !== undefined && metaEnv[key] !== null && metaEnv[key] !== '') {
+        return metaEnv[key];
+      }
+    } catch (metaError) {
+      // import.meta might not be available in all contexts
+    }
+    
+    // Fallback to process.env for Node.js environments (SSR, build-time)
+    if (typeof process !== 'undefined' && process.env) {
+      const value = process.env[key];
+      if (value !== undefined && value !== null && value !== '') {
+        return value;
+      }
+    }
+    
     return fallback;
   } catch (error) {
-    console.warn(`Environment variable access failed for ${key}, using fallback`);
+    console.warn(`Environment variable access failed for ${key}, using fallback:`, error.message);
     return fallback;
+  }
+};
+
+// Debug logging helper function (will be called after config creation)
+const logEnvDebug = () => {
+  try {
+    const metaEnv = import.meta.env;
+    if (metaEnv && metaEnv.DEV) {
+      console.log('🔧 AWS Config Debug - Available env vars:', {
+        VITE_API_ENDPOINT: metaEnv.VITE_API_ENDPOINT ? 'SET' : 'MISSING',
+        VITE_API_KEY: metaEnv.VITE_API_KEY ? 'SET' : 'MISSING',
+        AWS_REGION: metaEnv.AWS_REGION ? 'SET' : 'MISSING',
+        MODE: metaEnv.MODE,
+        // Don't log actual values for security
+      });
+    }
+  } catch (error) {
+    // Silently fail if import.meta is not available
   }
 };
 
@@ -69,5 +111,8 @@ const awsExports = {
     },
   },
 };
+
+// Call debug logging after config is created
+logEnvDebug();
 
 export default awsExports; 
