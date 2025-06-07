@@ -70,6 +70,7 @@ amplifytools.xcconfig
 
 # Allow our specific config aws-exports.js (needed for build)
 !config/aws-exports.js
+!frontend/config/aws-exports.js
 
 # Exclude unnecessary files from the GitHub repository
 *.log
