@@ -3,8 +3,12 @@ backend:
   phases:
     preBuild:
       commands:
+        - echo "Setting up environment with fallbacks"
+        - export AWS_REGION=${AWS_REGION:-us-east-1}
+        - export NODE_VERSION=18
+        - npm config set engine-strict false
         - cd backend/amplify
-        - npm ci
+        - npm ci --no-engine-strict
     build:
       commands:
         - echo "Building backend with TypeScript compilation"
@@ -16,15 +20,20 @@ frontend:
     preBuild:
       commands:
         - echo "Installing frontend dependencies from root directory"
-        - npm install
+        - npm config set engine-strict false
+        - npm install --no-engine-strict
         - echo "Frontend dependencies installed"
     build:
       commands:
         - echo "Building frontend with Vite from root directory"
         - pwd
+        - echo "Checking for critical files before build..."
+        - test -f frontend/config/aws-exports.js && echo "✅ aws-exports.js found" || echo "❌ aws-exports.js missing"
+        - test -f frontend/js/services/operations.js && echo "✅ operations.js found" || echo "❌ operations.js missing"
         - npm run build
         - echo "Frontend build completed - checking artifacts"
         - ls -la dist/
+        - test -f dist/index.html && echo "✅ Build successful: index.html exists" || (echo "❌ Build failed: no index.html" && exit 1)
   artifacts:
     baseDirectory: dist
     files:

@@ -2,33 +2,46 @@
 // This file provides the necessary configuration for AWS services
 // Note: Actual values will be populated by AWS Amplify during deployment
 
+// Safe environment variable access with comprehensive fallbacks
+const getEnvVar = (key, fallback) => {
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[key] || fallback;
+    }
+    return fallback;
+  } catch (error) {
+    console.warn(`Environment variable access failed for ${key}, using fallback`);
+    return fallback;
+  }
+};
+
 const awsExports = {
   // AWS Region
-  aws_project_region: process.env.AWS_REGION || 'us-east-1',
+  aws_project_region: getEnvVar('AWS_REGION', 'us-east-1'),
   
   // API Configuration (GraphQL)
-  aws_appsync_graphqlEndpoint: process.env.VITE_API_ENDPOINT || 'https://placeholder-api-endpoint.appsync-api.region.amazonaws.com/graphql',
-  aws_appsync_region: process.env.AWS_REGION || 'us-east-1',
+  aws_appsync_graphqlEndpoint: getEnvVar('VITE_API_ENDPOINT', 'https://placeholder-api-endpoint.appsync-api.region.amazonaws.com/graphql'),
+  aws_appsync_region: getEnvVar('AWS_REGION', 'us-east-1'),
   aws_appsync_authenticationType: 'API_KEY',
-  aws_appsync_apiKey: process.env.VITE_API_KEY || 'placeholder-api-key',
+  aws_appsync_apiKey: getEnvVar('VITE_API_KEY', 'placeholder-api-key'),
   
   // Authentication Configuration
   Auth: {
     // Currently using API Key for public access
     // Future: Configure Cognito when user auth is added
-    identityPoolId: process.env.IDENTITY_POOL_ID || '',
-    region: process.env.AWS_REGION || 'us-east-1',
-    userPoolId: process.env.USER_POOL_ID || '',
-    userPoolWebClientId: process.env.USER_POOL_CLIENT_ID || '',
+    identityPoolId: getEnvVar('IDENTITY_POOL_ID', ''),
+    region: getEnvVar('AWS_REGION', 'us-east-1'),
+    userPoolId: getEnvVar('USER_POOL_ID', ''),
+    userPoolWebClientId: getEnvVar('USER_POOL_CLIENT_ID', ''),
   },
   
   // API Configuration
   API: {
     GraphQL: {
-      endpoint: process.env.VITE_API_ENDPOINT || 'https://placeholder-api-endpoint.appsync-api.region.amazonaws.com/graphql',
-      region: process.env.AWS_REGION || 'us-east-1',
+      endpoint: getEnvVar('VITE_API_ENDPOINT', 'https://placeholder-api-endpoint.appsync-api.region.amazonaws.com/graphql'),
+      region: getEnvVar('AWS_REGION', 'us-east-1'),
       defaultAuthMode: 'apiKey',
-      apiKey: process.env.VITE_API_KEY || 'placeholder-api-key',
+      apiKey: getEnvVar('VITE_API_KEY', 'placeholder-api-key'),
     }
   },
   

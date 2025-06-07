@@ -25,7 +25,8 @@
     "react-dom": "^18.2.0",
     "serve": "^14.0.0",
     "typescript": "^5.8.3",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "core-js": "^3.38.1"
   },
   "devDependencies": {
     "@vitejs/plugin-legacy": "^6.1.1",
