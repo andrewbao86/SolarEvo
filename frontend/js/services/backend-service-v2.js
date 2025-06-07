@@ -85,7 +85,7 @@ class BackendServiceV2 {
         }
 
         try {
-            const { createSharedCalculation } = await import('../../../backend/api/operations.js');
+            const { createSharedCalculation } = await import('./operations.js');
             
             // Generate unique share ID
             const shareId = this.generateShareId();
@@ -138,7 +138,7 @@ class BackendServiceV2 {
         }
 
         try {
-            const { getSharedCalculationByShareId } = await import('../../../backend/api/operations.js');
+            const { getSharedCalculationByShareId } = await import('./operations.js');
             
             this.debugLog('🔍 Loading shared calculation:', shareId);
 

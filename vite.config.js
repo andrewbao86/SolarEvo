@@ -11,6 +11,7 @@ export default defineConfig({
       }
     },
     outDir: '../dist',
+    emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: true
   },
@@ -42,6 +43,8 @@ export default defineConfig({
   // Handle CommonJS modules
   resolve: {
     alias: {
+      '@backend': new URL('./backend', import.meta.url).pathname,
+      '@config': new URL('./config', import.meta.url).pathname,
       './runtimeConfig': './runtimeConfig.browser',
     }
   }

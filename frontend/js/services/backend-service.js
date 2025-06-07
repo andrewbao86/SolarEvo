@@ -15,6 +15,7 @@ export class BackendService {
             const { default: awsExports } = await import('../config/aws-exports.js');
             this.awsConfig = awsExports;
 
+            console.log('🔧 Backend Service Initializing...', {
                 region: awsExports.aws_project_region,
                 graphqlEndpoint: awsExports.aws_appsync_graphqlEndpoint ? 'SET' : 'MISSING',
                 apiKey: awsExports.aws_appsync_apiKey ? 'SET' : 'MISSING'
@@ -44,7 +45,7 @@ export class BackendService {
         }
 
         try {
-            const { createSharedCalculation } = await import('../../../backend/api/operations.js');
+            const { createSharedCalculation } = await import('./operations.js');
             
             const response = await this.client.graphql({
                 query: createSharedCalculation,
@@ -64,7 +65,7 @@ export class BackendService {
         }
 
         try {
-            const { getSharedCalculation } = await import('../../../backend/api/operations.js');
+            const { getSharedCalculation } = await import('./operations.js');
             
             const response = await this.client.graphql({
                 query: getSharedCalculation,

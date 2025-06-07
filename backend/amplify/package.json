@@ -8,7 +8,7 @@
     "delete": "npx ampx sandbox delete"
   },
   "dependencies": {
-    "@aws-amplify/backend": "^1.0.0"
+    "@aws-amplify/backend": "^1.16.1"
   },
   "devDependencies": {
     "@types/node": "^18.19.111",
