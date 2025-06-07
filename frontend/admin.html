@@ -393,12 +393,12 @@
         // Import AWS Amplify components
         import { Amplify } from 'aws-amplify';
         import { generateClient } from 'aws-amplify/api';
-        import awsExports from './js/config/aws-exports.js';
+        import awsExports from './config/aws-exports.js';
         import { 
             listSharedCalculations,
             getSharedCalculation,
             updateSharedCalculation
-        } from '../backend/api/operations.js';
+        } from './config/operations.js';
 
         // Enhanced GraphQL operations for admin functions  
         const adminListSharedCalculations = /* GraphQL */ `
